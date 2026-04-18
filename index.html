@@ -212,6 +212,21 @@
   }
   .generate-btn:active { transform: scale(0.98); box-shadow: none; }
 
+  .reset-btn {
+    padding: 11px 16px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-sub);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .reset-btn:active { background: var(--border); }
+
   /* ── MAIN ── */
   main { padding: 16px 16px 20px; }
 
@@ -582,6 +597,7 @@
     </div>
   </div>
   <div class="generate-btn-wrap">
+    <button class="reset-btn" onclick="resetAll()">↺ リセット</button>
     <button class="generate-btn" onclick="generateTable()">✦ 生成</button>
   </div>
 </div>
@@ -897,6 +913,30 @@ function flashPrev() {
     flashIndex--;
     renderFlashCard();
   }
+}
+
+// ─── RESET ───
+function resetAll() {
+  // フォームを初期値に戻す
+  selectBook('1400', false);
+  document.getElementById('rangeFrom').value = '1';
+  document.getElementById('rangeTo').value = '50';
+  document.getElementById('orderMode').value = 'ordered';
+  document.getElementById('maskMode').value = 'hide';
+  saveSettings();
+
+  // 表をクリア
+  currentWords = [];
+  localStorage.removeItem(LS_TABLE);
+  localStorage.removeItem(LS_MASKS);
+  maskStates = {};
+
+  document.getElementById('tableArea').innerHTML = `
+    <div class="empty-state">
+      <div class="big">📖</div>
+      <p>上のフォームで範囲を設定して<br>「表を生成する」を押してください</p>
+    </div>`;
+  showToast('リセットしました');
 }
 
 // ─── UTILS ───
