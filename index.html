@@ -46,11 +46,11 @@
   }
 
   .header-title {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--text-dim);
+    color: var(--text);
     margin-bottom: 12px;
   }
 
@@ -181,23 +181,28 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
+  .generate-btn-wrap {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 14px;
+  }
   .generate-btn {
-    grid-column: 1 / -1;
-    padding: 12px;
+    padding: 11px 20px;
     border-radius: var(--radius);
     border: none;
     background: linear-gradient(135deg, var(--accent) 0%, #7b5ef0 100%);
     color: #fff;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.05em;
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 4px 20px rgba(91,106,240,0.35);
+    white-space: nowrap;
   }
   .generate-btn:active { transform: scale(0.98); box-shadow: none; }
 
@@ -280,7 +285,8 @@
     font-weight: 600;
     color: var(--text);
     font-family: 'Outfit', monospace;
-    font-size: 15px !important;
+    font-size: clamp(12px, 4vw, 18px) !important;
+    word-break: break-all;
     width: 42%;
   }
 
@@ -403,7 +409,9 @@
   }
 
   .flash-word {
-    font-size: 32px;
+    font-size: 64px;
+    line-height: 1.1;
+    word-break: break-all;
     font-weight: 700;
     font-family: 'Outfit', sans-serif;
     color: var(--text);
@@ -562,14 +570,13 @@
     <div class="control-group">
       <label>意味の表示</label>
       <select class="control-select" id="maskMode" onchange="saveSettings()">
-        <option value="show">表示する</option>
         <option value="hide">隠す</option>
+        <option value="show">表示する</option>
       </select>
     </div>
   </div>
-
-  <div style="padding-bottom: 14px;">
-    <button class="generate-btn" onclick="generateTable()">✦ 表を生成する</button>
+  <div class="generate-btn-wrap">
+    <button class="generate-btn" onclick="generateTable()">✦ 生成</button>
   </div>
 </div>
 
@@ -827,7 +834,14 @@ function renderFlashCard() {
   document.getElementById('flashProgressText').textContent = `${flashIndex + 1} / ${total}`;
   document.getElementById('progressFill').style.width = `${((flashIndex + 1) / total) * 100}%`;
   document.getElementById('flashNo').textContent = `#${w.no}`;
-  document.getElementById('flashWord').textContent = w.word;
+
+  const wordEl = document.getElementById('flashWord');
+  wordEl.textContent = w.word;
+  // 画面幅に応じて3段階
+  const vw = window.innerWidth;
+  const size = vw >= 400 ? 48 : vw >= 320 ? 36 : 28;
+  wordEl.style.fontSize = size + 'px';
+
   document.getElementById('flashMeaning').textContent = w.meaning;
   document.getElementById('flashCover').classList.remove('hidden');
 }
@@ -876,15 +890,19 @@ function showToast(msg) {
 </script>
 
 <script>
-// iOS ピンチズーム無効化
+// iOS ズーム完全無効化
 document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
   if (e.touches.length > 1) e.preventDefault();
 }, { passive: false });
 
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function(e) {
   const now = Date.now();
-  if (now - lastTouchEnd <= 300) e.preventDefault();
+  if (now - lastTouchEnd <= 200) e.preventDefault();
   lastTouchEnd = now;
 }, { passive: false });
 </script>
