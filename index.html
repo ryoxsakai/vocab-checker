@@ -530,7 +530,6 @@
     color: var(--red);
     font-size: 16px;
     font-weight: 500;
-    font-family: 'Noto Sans JP', sans-serif;
     user-select: none;
   }
 
@@ -725,7 +724,7 @@ let currentWords = []; // words currently shown in table
 let flashIndex = 0;
 let flashWords = [];
 let maskStates = {};   // key: `${book}-${no}` → true=masked
-let tableSwapped = false; // false=左意味・右スペル、true=左スペル・右意味
+let tableSwapped = true; // false=左意味・右スペル、true=左スペル・右意味（デフォルト）
 
 // ─── LS KEYS ───
 const LS_SETTINGS = 'vocab_settings';
@@ -914,34 +913,39 @@ function renderTable(words) {
   html += '<th>#</th><th>' + leftLabel + '</th><th>' + rightLabel + '</th>';
   html += '</tr></thead><tbody>';
 
-  const wordStyle = 'font-family:\'Outfit\',monospace;font-weight:600;color:#e8eaf6;font-size:clamp(12px,4vw,18px);';
-  const meaningStyle = 'color:#e05555;font-size:13px;font-weight:500;font-family:\'Noto Sans JP\',sans-serif;';
+  // コンテンツに合わせたスタイル（英語用・日本語用）
+  const wordStyle    = 'font-family:\'Outfit\',monospace;font-weight:600;color:#e8eaf6;font-size:clamp(12px,4vw,18px);';
+  const meaningStyle = 'font-family:\'Noto Sans JP\',sans-serif;font-weight:500;color:#e05555;font-size:13px;';
 
   for (let i = 0; i < words.length; i++) {
     const w = words[i];
     const key = currentBook + '-' + w.no;
     const masked = maskStates[key] === true;
 
-    const leftText  = swapped ? w.word : w.meaning;
+    // swapped=true(デフォルト): 左=単語(英), 右=意味(日)
+    // swapped=false:            左=意味(日), 右=単語(英)
+    const leftText  = swapped ? w.word    : w.meaning;
     const rightText = swapped ? w.meaning : w.word;
-    const leftStyle  = swapped ? wordStyle : meaningStyle;
+    const leftStyleBase = swapped ? wordStyle : meaningStyle;
+    const leftStyle  = leftStyleBase.replace('color:#e05555', 'color:#e8eaf6');
     const rightStyle = swapped ? meaningStyle : wordStyle;
-    const leftClass  = swapped ? 'td-word' : 'td-meaning';
-    const rightClass = swapped ? 'td-meaning' : 'td-word';
+    // 右が英語のとき赤にするか白にするかは色で区別
+    // → 右は常に赤系にしたいので rightStyle の color を上書き
+    const rightStyleRed = rightStyle.replace('color:#e8eaf6', 'color:#e05555');
 
-    // 左セル
-    const leftCell = '<td class="' + leftClass + '"><span style="' + leftStyle + '">' + escHtml(leftText) + '</span></td>';
+    // 左セル（常に白）
+    const leftCell = '<td class="td-word"><span style="' + leftStyle + '">' + escHtml(leftText) + '</span></td>';
 
-    // 右セル
+    // 右セル（常に赤）
     let rightCell;
     if (mode === 'hide') {
       const maskStyle = 'position:absolute;inset:-2px -4px;background:#c03030;border-radius:4px;cursor:pointer;' + (masked ? '' : 'display:none;');
-      rightCell = '<td class="' + rightClass + '" style="position:relative;" data-key="' + key + '" onclick="tapMask(this)">'
-        + '<span style="' + rightStyle + 'position:relative;">' + escHtml(rightText) + '</span>'
+      rightCell = '<td class="td-meaning" style="position:relative;" data-key="' + key + '" onclick="tapMask(this)">'
+        + '<span style="' + rightStyleRed + 'position:relative;">' + escHtml(rightText) + '</span>'
         + '<span class="mask-el" style="' + maskStyle + '"></span>'
         + '</td>';
     } else {
-      rightCell = '<td class="' + rightClass + '"><span style="' + rightStyle + '">' + escHtml(rightText) + '</span></td>';
+      rightCell = '<td class="td-meaning"><span style="' + rightStyleRed + '">' + escHtml(rightText) + '</span></td>';
     }
 
     html += '<tr class="word-row"><td>' + w.no + '</td>' + leftCell + rightCell + '</tr>';
@@ -1006,10 +1010,21 @@ function renderFlashCard() {
   const wordEl = document.getElementById('flashWord');
   wordEl.textContent = mainText;
   const vw = window.innerWidth;
-  const size = vw >= 400 ? 48 : vw >= 320 ? 36 : 28;
+  // 日本語（意味）が左＝メインのとき(swapped=false)はサイズを小さめに
+  const isJpMain = !tableSwapped;
+  const size = isJpMain
+    ? (vw >= 400 ? 28 : vw >= 320 ? 22 : 18)
+    : (vw >= 400 ? 48 : vw >= 320 ? 36 : 28);
   wordEl.style.fontSize = size + 'px';
+  wordEl.style.fontFamily = isJpMain ? "'Noto Sans JP', sans-serif" : "'Outfit', monospace";
 
-  document.getElementById('flashMeaning').textContent = coverText;
+  // カバー（答え）のフォント：メインと逆のコンテンツ
+  const isJpCover = tableSwapped; // swapped=true→カバーは意味(日本語)
+  const meaningEl = document.getElementById('flashMeaning');
+  meaningEl.textContent = coverText;
+  meaningEl.style.fontFamily = isJpCover ? "'Noto Sans JP', sans-serif" : "'Outfit', monospace";
+  meaningEl.style.fontSize   = isJpCover ? '16px' : '20px';
+  meaningEl.style.fontWeight = isJpCover ? '500' : '600';
   document.getElementById('flashCover').textContent = 'タップして表示';
   document.getElementById('flashCover').classList.remove('hidden');
 }
