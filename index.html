@@ -997,10 +997,11 @@ function renderFlashCard() {
   document.getElementById('progressFill').style.width = `${((flashIndex + 1) / total) * 100}%`;
   document.getElementById('flashNo').textContent = `#${w.no}`;
 
-  // swapped=false: 大きい文字=スペル、隠れる=意味
-  // swapped=true:  大きい文字=意味、隠れる=スペル
-  const mainText  = tableSwapped ? w.meaning : w.word;
-  const coverText = tableSwapped ? w.word    : w.meaning;
+  // 表と同じ：左=表示(大きい文字)、右=隠れる
+  // swapped=false(左=意味,右=スペル): 大きい文字=意味、隠れる=スペル
+  // swapped=true (左=スペル,右=意味): 大きい文字=スペル、隠れる=意味
+  const mainText  = tableSwapped ? w.word    : w.meaning;
+  const coverText = tableSwapped ? w.meaning : w.word;
 
   const wordEl = document.getElementById('flashWord');
   wordEl.textContent = mainText;
