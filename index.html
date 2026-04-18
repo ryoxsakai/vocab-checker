@@ -634,6 +634,7 @@ let maskStates = {};   // key: `${book}-${no}` → true=masked
 // ─── LS KEYS ───
 const LS_SETTINGS = 'vocab_settings';
 const LS_MASKS    = 'vocab_masks';
+const LS_TABLE    = 'vocab_table';
 
 // ─── INIT ───
 window.addEventListener('DOMContentLoaded', async () => {
@@ -641,6 +642,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   loadMasks();
   await loadBook('1400');
   await loadBook('1900');
+  restoreTable(); // CSVロード後に表を復元
 });
 
 async function loadBook(book) {
@@ -715,6 +717,29 @@ function saveMasks() {
   localStorage.setItem(LS_MASKS, JSON.stringify(maskStates));
 }
 
+// ─── TABLE SAVE/RESTORE ───
+function saveTable(words) {
+  const data = {
+    book: currentBook,
+    words: words.map(w => w.no) // 順序ごと番号列で保存
+  };
+  localStorage.setItem(LS_TABLE, JSON.stringify(data));
+}
+
+function restoreTable() {
+  try {
+    const data = JSON.parse(localStorage.getItem(LS_TABLE) || 'null');
+    if (!data || !data.words || !data.book) return;
+    const wordMap = {};
+    (allWords[data.book] || []).forEach(w => wordMap[w.no] = w);
+    const words = data.words.map(no => wordMap[no]).filter(Boolean);
+    if (words.length === 0) return;
+    currentBook = data.book;
+    currentWords = words;
+    renderTable(words);
+  } catch(e) {}
+}
+
 // ─── BOOK SELECTION ───
 function selectBook(book, silent = false) {
   currentBook = book;
@@ -760,6 +785,7 @@ function generateTable() {
   });
   saveMasks();
 
+  saveTable(displayWords);
   renderTable(displayWords);
 }
 
