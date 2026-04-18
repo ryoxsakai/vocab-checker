@@ -48,6 +48,44 @@
     box-shadow: 0 4px 24px rgba(0,0,0,0.4);
   }
 
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .collapse-bar {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+    margin-top: 2px;
+  }
+  .collapse-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 2px 16px;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+  .collapse-btn:active { color: var(--accent); }
+
+  .collapsible-body {
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.3s ease;
+    max-height: 600px;
+    opacity: 1;
+  }
+  .collapsible-body.collapsed {
+    max-height: 0;
+    opacity: 0;
+  }
+
   .header-title {
     font-size: clamp(14px, 4vw, 20px);
     font-weight: 700;
@@ -585,8 +623,11 @@
 
 <!-- HEADER -->
 <div class="header">
-  <div class="header-title">📚 Target Vocab Checker</div>
+  <div class="header-top">
+    <div class="header-title">📚 Target Vocab Checker</div>
+  </div>
 
+  <div class="collapsible-body" id="collapsibleBody">
   <!-- Book selector -->
   <div class="book-selector">
     <button class="book-btn active" data-book="1400" onclick="selectBook('1400')">Target 1400</button>
@@ -634,7 +675,11 @@
     <button class="reset-btn" onclick="resetAll()">↺ リセット</button>
     <button class="generate-btn" onclick="generateTable()">✦ 生成</button>
   </div>
-</div>
+  </div><!-- /collapsible-body -->
+  <div class="collapse-bar">
+    <button class="collapse-btn" id="collapseBtn" onclick="toggleCollapse()">▲</button>
+  </div>
+</div><!-- /header -->
 
 <!-- MAIN -->
 <main>
@@ -686,11 +731,13 @@ let tableSwapped = false; // false=左意味・右スペル、true=左スペル�
 const LS_SETTINGS = 'vocab_settings';
 const LS_MASKS    = 'vocab_masks';
 const LS_TABLE    = 'vocab_table';
+const LS_COLLAPSED = 'vocab_collapsed';
 
 // ─── INIT ───
 window.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
   loadMasks();
+  loadCollapsed();
   await loadBook('1400');
   await loadBook('1900');
   restoreTable(); // CSVロード後に表を復元
@@ -1002,6 +1049,32 @@ function swapColumns() {
   renderTable(currentWords);
 }
 
+// ─── COLLAPSE ───
+let formCollapsed = false;
+
+function toggleCollapse() {
+  formCollapsed = !formCollapsed;
+  applyCollapse();
+  localStorage.setItem(LS_COLLAPSED, formCollapsed ? '1' : '0');
+}
+
+function applyCollapse() {
+  const body = document.getElementById('collapsibleBody');
+  const btn  = document.getElementById('collapseBtn');
+  if (formCollapsed) {
+    body.classList.add('collapsed');
+    btn.textContent = '▼';
+  } else {
+    body.classList.remove('collapsed');
+    btn.textContent = '▲';
+  }
+}
+
+function loadCollapsed() {
+  formCollapsed = localStorage.getItem(LS_COLLAPSED) === '1';
+  applyCollapse();
+}
+
 // ─── RESET ───
 function resetAll() {
   // フォームを初期値に戻す
@@ -1012,6 +1085,10 @@ function resetAll() {
   document.getElementById('maskMode').value = 'hide';
   saveSettings();
 
+  // フォームを展開
+  formCollapsed = false;
+  applyCollapse();
+  localStorage.removeItem(LS_COLLAPSED);
   // 表をクリア
   currentWords = [];
   tableSwapped = false;
