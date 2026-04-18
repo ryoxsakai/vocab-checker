@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Target Vocab Checker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222535;
+    --border: #2e3248;
+    --accent: #5b6af0;
+    --accent2: #7c8cf8;
+    --red: #e05555;
+    --red-dark: #c03030;
+    --text: #e8eaf6;
+    --text-sub: #8b90b0;
+    --text-dim: #555a7a;
+    --green: #4caf84;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #1a1d27 0%, #131620 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  .header-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  /* ── BOOK SELECTOR ── */
+  .book-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .book-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-sub);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .book-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(91,106,240,0.4);
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  @media (min-width: 480px) {
+    .controls { grid-template-columns: 1fr 1fr; }
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .control-group label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .range-input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 8px 10px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+  .range-input:focus { border-color: var(--accent); }
+  .range-input::-webkit-inner-spin-button,
+  .range-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .step-btn {
+    width: 30px;
+    height: 34px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-sub);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .step-btn:active { background: var(--accent); color: #fff; }
+
+  .range-separator {
+    color: var(--text-dim);
+    font-size: 12px;
+    padding: 0 2px;
+  }
+
+  select.control-select {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px;
+    padding: 8px 10px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b90b0'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  select.control-select:focus { border-color: var(--accent); }
+
+  .controls-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .generate-btn {
+    grid-column: 1 / -1;
+    padding: 12px;
+    border-radius: var(--radius);
+    border: none;
+    background: linear-gradient(135deg, var(--accent) 0%, #7b5ef0 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(91,106,240,0.35);
+  }
+  .generate-btn:active { transform: scale(0.98); box-shadow: none; }
+
+  /* ── MAIN ── */
+  main { padding: 16px 16px 20px; }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .status-text {
+    font-size: 12px;
+    color: var(--text-sub);
+    font-weight: 500;
+  }
+
+  .flash-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1.5px solid var(--accent);
+    background: transparent;
+    color: var(--accent2);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .flash-btn:hover { background: var(--accent); color: #fff; }
+
+  /* ── TABLE ── */
+  .word-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+  }
+
+  .word-table thead th {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0 12px 6px;
+    text-align: left;
+  }
+
+  .word-row {
+    background: var(--surface);
+    transition: background 0.2s;
+  }
+  .word-row:hover { background: var(--surface2); }
+
+  .word-row td {
+    padding: 11px 12px;
+    font-size: 14px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .word-row td:first-child {
+    border-left: 1px solid var(--border);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    width: 40px;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .word-row td:last-child {
+    border-right: 1px solid var(--border);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .td-word {
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'Outfit', monospace;
+    font-size: 15px !important;
+    width: 42%;
+  }
+
+  .td-meaning {
+    position: relative;
+  }
+
+  .meaning-text {
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif;
+    user-select: none;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+
+  .meaning-mask {
+    position: absolute;
+    inset: -4px -6px;
+    background: var(--red-dark);
+    border-radius: 4px;
+    display: none;
+    cursor: pointer;
+  }
+  .meaning-mask.visible { display: block; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+  .empty-state .big { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 13px; line-height: 1.7; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px 24px;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+  .modal-close:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+  .modal-progress {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .flash-no {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .flash-word {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text);
+    margin-bottom: 28px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .flash-meaning-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 24px;
+    min-height: 60px;
+    position: relative;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .flash-meaning-wrap:hover { border-color: var(--red); }
+
+  .flash-meaning-text {
+    color: var(--red);
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif;
+    user-select: none;
+  }
+
+  .flash-meaning-cover {
+    position: absolute;
+    inset: 0;
+    background: var(--red-dark);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .flash-meaning-cover.hidden { display: none; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-next {
+    flex: 1;
+    padding: 13px;
+    border-radius: var(--radius);
+    border: none;
+    background: linear-gradient(135deg, var(--accent) 0%, #7b5ef0 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(91,106,240,0.3);
+  }
+  .btn-next:active { transform: scale(0.97); }
+
+  .btn-prev {
+    width: 48px;
+    padding: 13px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-sub);
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: transform 0.3s ease;
+    z-index: 2000;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── LOADING ── */
+  .loading-note {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">📚 Target Vocab Checker</div>
+
+  <!-- Book selector -->
+  <div class="book-selector">
+    <button class="book-btn active" data-book="1400" onclick="selectBook('1400')">Target 1400</button>
+    <button class="book-btn" data-book="1900" onclick="selectBook('1900')">Target 1900</button>
+  </div>
+
+  <!-- Range -->
+  <div class="controls">
+    <div class="control-group">
+      <label>開始番号</label>
+      <div class="range-row">
+        <button class="step-btn" onclick="step('rangeFrom', -10)">－</button>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeFrom" value="1" min="1" oninput="saveSettings()">
+        <button class="step-btn" onclick="step('rangeFrom', 10)">＋</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>終了番号</label>
+      <div class="range-row">
+        <button class="step-btn" onclick="step('rangeTo', -10)">－</button>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeTo" value="50" min="1" oninput="saveSettings()">
+        <button class="step-btn" onclick="step('rangeTo', 10)">＋</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="controls-row2">
+    <div class="control-group">
+      <label>順序</label>
+      <select class="control-select" id="orderMode" onchange="saveSettings()">
+        <option value="ordered">掲載順</option>
+        <option value="random">ランダム</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>意味の表示</label>
+      <select class="control-select" id="maskMode" onchange="saveSettings()">
+        <option value="show">表示する</option>
+        <option value="hide">隠す</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="padding-bottom: 14px;">
+    <button class="generate-btn" onclick="generateTable()">✦ 表を生成する</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+  <div id="tableArea">
+    <div class="empty-state">
+      <div class="big">📖</div>
+      <p>上のフォームで範囲を設定して<br>「表を生成する」を押してください</p>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeFlash()">✕</button>
+    <div class="modal-progress">
+      <span id="flashProgressText">1 / 50</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:2%"></div>
+      </div>
+    </div>
+    <div class="flash-no" id="flashNo">#1</div>
+    <div class="flash-word" id="flashWord">word</div>
+    <div class="flash-meaning-wrap" onclick="toggleFlashMask()">
+      <div class="flash-meaning-text" id="flashMeaning">意味</div>
+      <div class="flash-meaning-cover" id="flashCover">タップして表示</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-prev" onclick="flashPrev()">◀</button>
+      <button class="btn-next" onclick="flashNext()">次へ ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">保存しました</div>
+
+<script>
+// ─── STATE ───
+let allWords = {};      // { '1400': [...], '1900': [...] }
+let currentBook = '1400';
+let currentWords = []; // words currently shown in table
+let flashIndex = 0;
+let flashWords = [];
+let maskStates = {};   // key: `${book}-${no}` → true=masked
+
+// ─── LS KEYS ───
+const LS_SETTINGS = 'vocab_settings';
+const LS_MASKS    = 'vocab_masks';
+
+// ─── INIT ───
+window.addEventListener('DOMContentLoaded', async () => {
+  loadSettings();
+  loadMasks();
+  await loadBook('1400');
+  await loadBook('1900');
+});
+
+async function loadBook(book) {
+  const filename = `target${book}.csv`;
+  try {
+    const resp = await fetch(filename);
+    if (!resp.ok) throw new Error('not found');
+    const text = await resp.text();
+    allWords[book] = parseCSV(text);
+  } catch(e) {
+    // サンプルデータにフォールバック
+    allWords[book] = generateSampleData(book);
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  return lines.slice(1).map(line => {
+    const parts = line.split(',');
+    const no = parseInt(parts[0]);
+    const word = parts[1] ? parts[1].trim() : '';
+    const meaning = parts.slice(2).join(',').trim();
+    return { no, word, meaning };
+  }).filter(w => w.word);
+}
+
+function generateSampleData(book) {
+  const base = book === '1400' ? [
+    [1,'accept','～を受け入れる'],[2,'achieve','～を達成する'],[3,'admit','～を認める'],
+    [4,'affect','～に影響する'],[5,'allow','～を許可する'],[6,'appear','現れる；～のように見える'],
+    [7,'apply','応用する；申し込む'],[8,'argue','主張する；議論する'],[9,'assume','～を仮定する'],
+    [10,'avoid','～を避ける']
+  ] : [
+    [1,'abolish','～を廃止する'],[2,'abstain','控える；棄権する'],[3,'absurd','ばかげた；不条理な'],
+    [4,'accelerate','加速する；～を加速させる'],[5,'accessible','近づきやすい；利用しやすい'],
+    [6,'acclaim','称賛する'],[7,'accommodate','～を収容する'],[8,'accomplish','～を達成する'],
+    [9,'accountable','責任がある'],[10,'acknowledge','～を認める']
+  ];
+  return base.map(([no,word,meaning]) => ({no,word,meaning}));
+}
+
+// ─── SETTINGS ───
+function saveSettings() {
+  const settings = {
+    book: currentBook,
+    from: document.getElementById('rangeFrom').value,
+    to:   document.getElementById('rangeTo').value,
+    order: document.getElementById('orderMode').value,
+    mask:  document.getElementById('maskMode').value,
+  };
+  localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
+}
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}');
+    if (s.book) selectBook(s.book, true);
+    if (s.from) document.getElementById('rangeFrom').value = s.from;
+    if (s.to)   document.getElementById('rangeTo').value   = s.to;
+    if (s.order) document.getElementById('orderMode').value = s.order;
+    if (s.mask)  document.getElementById('maskMode').value  = s.mask;
+  } catch(e) {}
+}
+
+function loadMasks() {
+  try {
+    maskStates = JSON.parse(localStorage.getItem(LS_MASKS) || '{}');
+  } catch(e) { maskStates = {}; }
+}
+
+function saveMasks() {
+  localStorage.setItem(LS_MASKS, JSON.stringify(maskStates));
+}
+
+// ─── BOOK SELECTION ───
+function selectBook(book, silent = false) {
+  currentBook = book;
+  document.querySelectorAll('.book-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.book === book);
+  });
+  if (!silent) saveSettings();
+}
+
+// ─── RANGE STEP ───
+function step(id, delta) {
+  const el = document.getElementById(id);
+  const val = parseInt(el.value) || 0;
+  el.value = Math.max(1, val + delta);
+  saveSettings();
+}
+
+// ─── GENERATE TABLE ───
+function generateTable() {
+  const from  = parseInt(document.getElementById('rangeFrom').value);
+  const to    = parseInt(document.getElementById('rangeTo').value);
+  const order = document.getElementById('orderMode').value;
+  const mask  = document.getElementById('maskMode').value;
+
+  const words = (allWords[currentBook] || []).filter(w => w.no >= from && w.no <= to);
+
+  if (words.length === 0) {
+    showToast('該当する単語がありません');
+    return;
+  }
+
+  let displayWords = [...words];
+  if (order === 'random') {
+    shuffleArray(displayWords); // 毎回シャッフルし直す
+  }
+
+  currentWords = displayWords;
+
+  // ボタン押下のたびにプルダウンの指示で全リセット
+  displayWords.forEach(w => {
+    const key = `${currentBook}-${w.no}`;
+    maskStates[key] = (mask === 'hide');
+  });
+  saveMasks();
+
+  renderTable(displayWords);
+}
+
+function renderTable(words) {
+  const area = document.getElementById('tableArea');
+  if (words.length === 0) {
+    area.innerHTML = `<div class="empty-state"><div class="big">🔍</div><p>該当する単語がありません</p></div>`;
+    return;
+  }
+
+  let html = `
+    <div class="status-bar">
+      <span class="status-text">${words.length}語 表示中</span>
+      <button class="flash-btn" onclick="openFlash()">⚡ フラッシュチェック</button>
+    </div>
+    <table class="word-table">
+      <thead><tr>
+        <th>#</th>
+        <th>単語</th>
+        <th>意味</th>
+      </tr></thead>
+      <tbody>
+  `;
+
+  words.forEach(w => {
+    const key = `${currentBook}-${w.no}`;
+    const masked = maskStates[key] === true;
+    html += `
+      <tr class="word-row">
+        <td>${w.no}</td>
+        <td class="td-word">${escHtml(w.word)}</td>
+        <td class="td-meaning">
+          <span class="meaning-text" onclick="toggleMask('${key}', this)">${escHtml(w.meaning)}</span>
+          <span class="meaning-mask${masked ? ' visible' : ''}" onclick="toggleMask('${key}', this.previousElementSibling)"></span>
+        </td>
+      </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  area.innerHTML = html;
+}
+
+function toggleMask(key, textEl) {
+  const mask = textEl.nextElementSibling || textEl;
+  const cover = textEl.tagName === 'SPAN' && textEl.classList.contains('meaning-mask')
+    ? textEl
+    : textEl.nextElementSibling;
+
+  // find the cover element
+  const meaningText = textEl.classList.contains('meaning-text') ? textEl : textEl.previousElementSibling;
+  const maskEl = meaningText.nextElementSibling;
+
+  const isMasked = maskEl.classList.contains('visible');
+  maskEl.classList.toggle('visible', !isMasked);
+  maskStates[key] = !isMasked;
+  saveMasks();
+}
+
+// ─── FLASH CHECK ───
+function openFlash() {
+  if (!currentWords || currentWords.length === 0) return;
+  flashWords = [...currentWords];
+  flashIndex = 0;
+  renderFlashCard();
+  document.getElementById('modalOverlay').classList.add('open');
+  // always start with cover on
+  document.getElementById('flashCover').classList.remove('hidden');
+}
+
+function closeFlash() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function renderFlashCard() {
+  const w = flashWords[flashIndex];
+  const total = flashWords.length;
+
+  document.getElementById('flashProgressText').textContent = `${flashIndex + 1} / ${total}`;
+  document.getElementById('progressFill').style.width = `${((flashIndex + 1) / total) * 100}%`;
+  document.getElementById('flashNo').textContent = `#${w.no}`;
+  document.getElementById('flashWord').textContent = w.word;
+  document.getElementById('flashMeaning').textContent = w.meaning;
+  document.getElementById('flashCover').classList.remove('hidden');
+}
+
+function toggleFlashMask() {
+  const cover = document.getElementById('flashCover');
+  cover.classList.toggle('hidden');
+}
+
+function flashNext() {
+  if (flashIndex < flashWords.length - 1) {
+    flashIndex++;
+    renderFlashCard();
+  } else {
+    showToast('🎉 最後の単語です！');
+  }
+}
+
+function flashPrev() {
+  if (flashIndex > 0) {
+    flashIndex--;
+    renderFlashCard();
+  }
+}
+
+// ─── UTILS ───
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+
+<script>
+// iOS ピンチズーム無効化
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(e) {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+</script>
+</body>
+</html>
