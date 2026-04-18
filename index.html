@@ -512,7 +512,7 @@
     font-weight: 700;
     font-family: 'Outfit', sans-serif;
     color: var(--text);
-    margin-bottom: 28px;
+    margin-bottom: 14px;
     letter-spacing: -0.01em;
     line-height: 1.2;
   }
@@ -554,6 +554,42 @@
     transition: opacity 0.2s;
   }
   .flash-meaning-cover.hidden { display: none; }
+
+  .speak-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    padding: 3px 5px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s, transform 0.1s;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+  }
+  .speak-btn:hover { color: var(--accent2); background: var(--surface2); }
+  .speak-btn:active { transform: scale(0.85); }
+  .td-speak { width: 36px; text-align: center; padding: 0 4px !important; }
+
+  .flash-speak-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 auto 22px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-sub);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 6px 16px;
+    transition: color 0.15s, border-color 0.15s, transform 0.1s;
+    font-family: 'Outfit', sans-serif;
+  }
+  .flash-speak-btn:hover { color: var(--accent2); border-color: var(--accent); }
+  .flash-speak-btn:active { transform: scale(0.95); }
 
   .modal-actions {
     display: flex;
@@ -706,6 +742,10 @@
     </div>
     <div class="flash-no" id="flashNo">#1</div>
     <div class="flash-word" id="flashWord">word</div>
+    <button class="flash-speak-btn" onclick="speakCurrentFlash()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      発音を聞く
+    </button>
     <div class="flash-meaning-wrap" onclick="toggleFlashMask()">
       <div class="flash-meaning-text" id="flashMeaning">意味</div>
       <div class="flash-meaning-cover" id="flashCover">タップして表示</div>
@@ -912,9 +952,9 @@ function renderTable(words) {
 
   // テーブル
   html += '<table class="word-table">';
-  html += '<colgroup><col style="width:36px"><col><col></colgroup>';
+  html += '<colgroup><col style="width:36px"><col><col><col style="width:40px"></colgroup>';
   html += '<thead><tr>';
-  html += '<th>#</th><th>' + leftLabel + '</th><th>' + rightLabel + '</th>';
+  html += '<th>#</th><th>' + leftLabel + '</th><th>' + rightLabel + '</th><th></th>';
   html += '</tr></thead><tbody>';
 
   // コンテンツに合わせたスタイル（英語用・日本語用）
@@ -952,7 +992,8 @@ function renderTable(words) {
       rightCell = '<td class="td-meaning"><span style="' + rightStyleRed + '">' + escHtml(rightText) + '</span></td>';
     }
 
-    html += '<tr class="word-row"><td>' + w.no + '</td>' + leftCell + rightCell + '</tr>';
+    const speakTd = '<td class="td-speak"><button class="speak-btn" data-word="' + escHtml(w.word) + '" onclick="speak(this.dataset.word)" title="発音を聞く"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button></td>';
+    html += '<tr class="word-row"><td>' + w.no + '</td>' + leftCell + rightCell + speakTd + '</tr>';
   }
 
   html += '</tbody></table>';
@@ -1130,6 +1171,18 @@ function shuffleArray(arr) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+}
+
+function speak(word) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'en-US';
+  speechSynthesis.speak(u);
+}
+
+function speakCurrentFlash() {
+  if (flashWords.length > 0) speak(flashWords[flashIndex].word);
 }
 
 function escHtml(str) {
