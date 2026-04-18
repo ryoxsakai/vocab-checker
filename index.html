@@ -573,20 +573,18 @@
   .td-speak { width: 36px; text-align: center; padding: 0 4px !important; }
 
   .flash-speak-btn {
+    width: 48px;
+    padding: 13px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-sub);
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    margin: 0 auto 22px;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text-sub);
-    cursor: pointer;
-    font-size: 13px;
-    padding: 6px 16px;
+    flex-shrink: 0;
     transition: color 0.15s, border-color 0.15s, transform 0.1s;
-    font-family: 'Outfit', sans-serif;
   }
   .flash-speak-btn:hover { color: var(--accent2); border-color: var(--accent); }
   .flash-speak-btn:active { transform: scale(0.95); }
@@ -746,13 +744,10 @@
       <div class="flash-meaning-text" id="flashMeaning">意味</div>
       <div class="flash-meaning-cover" id="flashCover">タップして表示</div>
     </div>
-    <button class="flash-speak-btn" onclick="speakCurrentFlash()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-      発音を聞く
-    </button>
     <div class="modal-actions">
       <button class="btn-prev" onclick="flashPrev()">◀</button>
       <button class="btn-next" onclick="flashNext()">次へ ▶</button>
+      <button class="flash-speak-btn" onclick="speakCurrentFlash()" title="発音を聞く"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
     </div>
   </div>
 </div>
