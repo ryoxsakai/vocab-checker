@@ -54,7 +54,8 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text);
-    margin-bottom: 12px;
+    margin-top: 6px;
+    margin-bottom: 16px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -193,6 +194,7 @@
   .generate-btn-wrap {
     display: flex;
     justify-content: flex-end;
+    gap: 10px;
     padding-bottom: 14px;
   }
   .generate-btn {
@@ -258,9 +260,25 @@
   }
   .flash-btn:hover { background: var(--accent); color: #fff; }
 
+  .swap-btn {
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text-sub);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .swap-btn:hover, .swap-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
   /* ── TABLE ── */
   .word-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0 6px;
   }
@@ -291,7 +309,7 @@
   .word-row td:first-child {
     border-left: 1px solid var(--border);
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-    width: 40px;
+    width: 28px;
     color: var(--text-dim);
     font-size: 11px;
     font-weight: 600;
@@ -307,12 +325,13 @@
     color: var(--text);
     font-family: 'Outfit', monospace;
     font-size: clamp(12px, 4vw, 18px) !important;
-    word-break: break-all;
-    width: 42%;
+    word-break: break-word;
+    width: 50%;
   }
 
   .td-meaning {
     position: relative;
+    width: 50%;
   }
 
   .meaning-text {
@@ -335,7 +354,22 @@
     display: none;
     cursor: pointer;
   }
+  .td-word .meaning-mask,
+  .td-word { position: relative; }
   .meaning-mask.visible { display: block; }
+
+  /* スペル用マスク対応テキスト */
+  .spell-text {
+    color: var(--text);
+    font-family: 'Outfit', monospace;
+    font-size: clamp(12px, 4vw, 18px);
+    font-weight: 600;
+    user-select: none;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
 
   /* ── EMPTY STATE ── */
   .empty-state {
@@ -589,7 +623,7 @@
       </select>
     </div>
     <div class="control-group">
-      <label>意味の表示</label>
+      <label>表示</label>
       <select class="control-select" id="maskMode" onchange="saveSettings()">
         <option value="hide">隠す</option>
         <option value="show">表示する</option>
@@ -646,6 +680,7 @@ let currentWords = []; // words currently shown in table
 let flashIndex = 0;
 let flashWords = [];
 let maskStates = {};   // key: `${book}-${no}` → true=masked
+let tableSwapped = false; // false=左意味・右スペル、true=左スペル・右意味
 
 // ─── LS KEYS ───
 const LS_SETTINGS = 'vocab_settings';
@@ -808,52 +843,84 @@ function generateTable() {
 function renderTable(words) {
   const area = document.getElementById('tableArea');
   if (words.length === 0) {
-    area.innerHTML = `<div class="empty-state"><div class="big">🔍</div><p>該当する単語がありません</p></div>`;
+    area.innerHTML = '<div class="empty-state"><div class="big">🔍</div><p>該当する単語がありません</p></div>';
     return;
   }
 
-  let html = `
-    <div class="status-bar">
-      <span class="status-text">${words.length}語 表示中</span>
-      <button class="flash-btn" onclick="openFlash()">⚡ フラッシュチェック</button>
-    </div>
-    <table class="word-table">
-      <thead><tr>
-        <th>#</th>
-        <th>単語</th>
-        <th>意味</th>
-      </tr></thead>
-      <tbody>
-  `;
+  const mode = document.getElementById('maskMode').value;
+  const swapped = tableSwapped;
+  const leftLabel  = swapped ? '単語' : '意味';
+  const rightLabel = swapped ? '意味' : '単語';
 
-  words.forEach(w => {
-    const key = `${currentBook}-${w.no}`;
+  // ステータスバー
+  let html = '<div class="status-bar">';
+  html += '<span class="status-text">' + words.length + '語 表示中</span>';
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button class="swap-btn' + (swapped ? ' active' : '') + '" onclick="swapColumns()">⇄ 入れ替え</button>';
+  html += '<button class="flash-btn" onclick="openFlash()">⚡ フラッシュチェック</button>';
+  html += '</div></div>';
+
+  // テーブル
+  html += '<table class="word-table">';
+  html += '<colgroup><col style="width:36px"><col><col></colgroup>';
+  html += '<thead><tr>';
+  html += '<th>#</th><th>' + leftLabel + '</th><th>' + rightLabel + '</th>';
+  html += '</tr></thead><tbody>';
+
+  const wordStyle = 'font-family:\'Outfit\',monospace;font-weight:600;color:#e8eaf6;font-size:clamp(12px,4vw,18px);';
+  const meaningStyle = 'color:#e05555;font-size:13px;font-weight:500;font-family:\'Noto Sans JP\',sans-serif;';
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    const key = currentBook + '-' + w.no;
     const masked = maskStates[key] === true;
-    html += `
-      <tr class="word-row">
-        <td>${w.no}</td>
-        <td class="td-word">${escHtml(w.word)}</td>
-        <td class="td-meaning">
-          <span class="meaning-text" onclick="toggleMask('${key}', this)">${escHtml(w.meaning)}</span>
-          <span class="meaning-mask${masked ? ' visible' : ''}" onclick="toggleMask('${key}', this.previousElementSibling)"></span>
-        </td>
-      </tr>`;
-  });
 
-  html += `</tbody></table>`;
+    const leftText  = swapped ? w.word : w.meaning;
+    const rightText = swapped ? w.meaning : w.word;
+    const leftStyle  = swapped ? wordStyle : meaningStyle;
+    const rightStyle = swapped ? meaningStyle : wordStyle;
+    const leftClass  = swapped ? 'td-word' : 'td-meaning';
+    const rightClass = swapped ? 'td-meaning' : 'td-word';
+
+    // 左セル
+    const leftCell = '<td class="' + leftClass + '"><span style="' + leftStyle + '">' + escHtml(leftText) + '</span></td>';
+
+    // 右セル
+    let rightCell;
+    if (mode === 'hide') {
+      const maskStyle = 'position:absolute;inset:-2px -4px;background:#c03030;border-radius:4px;cursor:pointer;' + (masked ? '' : 'display:none;');
+      rightCell = '<td class="' + rightClass + '" style="position:relative;" data-key="' + key + '" onclick="tapMask(this)">'
+        + '<span style="' + rightStyle + 'position:relative;">' + escHtml(rightText) + '</span>'
+        + '<span class="mask-el" style="' + maskStyle + '"></span>'
+        + '</td>';
+    } else {
+      rightCell = '<td class="' + rightClass + '"><span style="' + rightStyle + '">' + escHtml(rightText) + '</span></td>';
+    }
+
+    html += '<tr class="word-row"><td>' + w.no + '</td>' + leftCell + rightCell + '</tr>';
+  }
+
+  html += '</tbody></table>';
   area.innerHTML = html;
 }
 
+// ── 新しいマスクトグル：td全体をクリック可能に ──
+function tapMask(tdEl) {
+  const key = tdEl.getAttribute('data-key');
+  const maskEl = tdEl.querySelector('.mask-el');
+  if (!maskEl) return;
+  const isMasked = maskEl.style.display !== 'none';
+  maskEl.style.display = isMasked ? 'none' : 'block';
+  maskStates[key] = !isMasked;
+  saveMasks();
+}
+
 function toggleMask(key, textEl) {
-  const mask = textEl.nextElementSibling || textEl;
-  const cover = textEl.tagName === 'SPAN' && textEl.classList.contains('meaning-mask')
-    ? textEl
-    : textEl.nextElementSibling;
-
-  // find the cover element
-  const meaningText = textEl.classList.contains('meaning-text') ? textEl : textEl.previousElementSibling;
-  const maskEl = meaningText.nextElementSibling;
-
+  // クリックされたのがテキストspan自身か、マスクspanかを判定
+  const isTextSpan = textEl.classList.contains('meaning-text') || textEl.classList.contains('spell-text');
+  const textSpan = isTextSpan ? textEl : textEl.previousElementSibling;
+  const maskEl = textSpan ? textSpan.nextElementSibling : null;
+  if (!maskEl) return;
   const isMasked = maskEl.classList.contains('visible');
   maskEl.classList.toggle('visible', !isMasked);
   maskStates[key] = !isMasked;
@@ -883,14 +950,19 @@ function renderFlashCard() {
   document.getElementById('progressFill').style.width = `${((flashIndex + 1) / total) * 100}%`;
   document.getElementById('flashNo').textContent = `#${w.no}`;
 
+  // swapped=false: 大きい文字=スペル、隠れる=意味
+  // swapped=true:  大きい文字=意味、隠れる=スペル
+  const mainText  = tableSwapped ? w.meaning : w.word;
+  const coverText = tableSwapped ? w.word    : w.meaning;
+
   const wordEl = document.getElementById('flashWord');
-  wordEl.textContent = w.word;
-  // 画面幅に応じて3段階
+  wordEl.textContent = mainText;
   const vw = window.innerWidth;
   const size = vw >= 400 ? 48 : vw >= 320 ? 36 : 28;
   wordEl.style.fontSize = size + 'px';
 
-  document.getElementById('flashMeaning').textContent = w.meaning;
+  document.getElementById('flashMeaning').textContent = coverText;
+  document.getElementById('flashCover').textContent = 'タップして表示';
   document.getElementById('flashCover').classList.remove('hidden');
 }
 
@@ -915,6 +987,21 @@ function flashPrev() {
   }
 }
 
+// ─── SWAP COLUMNS ───
+function swapColumns() {
+  tableSwapped = !tableSwapped;
+  if (currentWords.length === 0) return;
+
+  // 入れ替え後もmodeに従ってmaskStatesを再適用
+  const mode = document.getElementById('maskMode').value;
+  currentWords.forEach(function(w) {
+    const key = currentBook + '-' + w.no;
+    maskStates[key] = (mode === 'hide');
+  });
+  saveMasks();
+  renderTable(currentWords);
+}
+
 // ─── RESET ───
 function resetAll() {
   // フォームを初期値に戻す
@@ -927,6 +1014,7 @@ function resetAll() {
 
   // 表をクリア
   currentWords = [];
+  tableSwapped = false;
   localStorage.removeItem(LS_TABLE);
   localStorage.removeItem(LS_MASKS);
   maskStates = {};
