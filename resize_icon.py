@@ -80,7 +80,23 @@ def crop_and_resize(src, dst, nw, nh, dark_thresh=110):
     cs = max(cw, ch)
     cx = min_x - (cs - cw) // 2
     cy = min_y - (cs - ch) // 2
-    print(f"Crop: origin=({cx},{cy}), size={cs}x{cs}")
+
+    # 四隅がすべて紺色になるまで内側に絞り込む
+    def is_dark(px, py):
+        r,g,b,a = get_rgba(px, py, w, h, bd, ct, bpp, rows, plte)
+        return (r + g + b) // 3 < dark_thresh
+
+    while cs > 0:
+        corners = [
+            is_dark(cx,      cy),
+            is_dark(cx+cs-1, cy),
+            is_dark(cx,      cy+cs-1),
+            is_dark(cx+cs-1, cy+cs-1),
+        ]
+        if all(corners):
+            break
+        cx += 1; cy += 1; cs -= 2  # 全辺を1px内側へ
+    print(f"Crop after corner check: origin=({cx},{cy}), size={cs}x{cs}")
 
     # バイリニア補間でリサイズ
     out = []
