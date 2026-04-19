@@ -51,24 +51,38 @@ def get_rgba(x, y, w, h, bd, ct, bpp, rows, plte):
         elif ct == 6: i=x*4; return row[i],row[i+1],row[i+2],row[i+3]
         elif ct == 0: v=row[x]; return v,v,v,255
         elif ct == 4: i=x*2; v=row[i]; return v,v,v,row[i+1]
-        elif ct == 3:
-            i = row[x]*3
-            return plte[i],plte[i+1],plte[i+2],255
+        elif ct == 3: i=row[x]*3; return plte[i],plte[i+1],plte[i+2],255
     elif bd == 16:
         if ct == 2:   i=x*6; return row[i],row[i+2],row[i+4],255
         elif ct == 6: i=x*8; return row[i],row[i+2],row[i+4],row[i+6]
     return 128,128,128,255
 
-def resize(src, dst, nw, nh):
+def crop_and_resize(src, dst, nw, nh, dark_thresh=110):
     w, h, bd, ct, bpp, rows, plte = read_png(src)
     print(f"Source: {w}x{h}, color_type={ct}, bit_depth={bd}")
 
-    # Center-crop to square
-    if w > h:
-        cx, cy, cs = (w-h)//2, 0, h
-    else:
-        cx, cy, cs = 0, (h-w)//2, w
+    # 濃いピクセルのバウンディングボックスを検出
+    min_x, min_y = w, h
+    max_x, max_y = 0, 0
+    for y in range(h):
+        for x in range(w):
+            r,g,b,a = get_rgba(x, y, w, h, bd, ct, bpp, rows, plte)
+            if (r + g + b) // 3 < dark_thresh:
+                if x < min_x: min_x = x
+                if x > max_x: max_x = x
+                if y < min_y: min_y = y
+                if y > max_y: max_y = y
+    print(f"Dark pixel bbox: ({min_x},{min_y}) - ({max_x},{max_y})")
 
+    # 正方形にする（長い辺に合わせる）
+    cw = max_x - min_x + 1
+    ch = max_y - min_y + 1
+    cs = max(cw, ch)
+    cx = min_x - (cs - cw) // 2
+    cy = min_y - (cs - ch) // 2
+    print(f"Crop: origin=({cx},{cy}), size={cs}x{cs}")
+
+    # バイリニア補間でリサイズ
     out = []
     for dy in range(nh):
         row_out = []
@@ -77,17 +91,17 @@ def resize(src, dst, nw, nh):
             sy = (dy+0.5)*cs/nh - 0.5 + cy
             x0,y0 = int(math.floor(sx)), int(math.floor(sy))
             fx,fy = sx-x0, sy-y0
-            p00 = get_rgba(x0,  y0,  w,h,bd,ct,bpp,rows,plte)
-            p10 = get_rgba(x0+1,y0,  w,h,bd,ct,bpp,rows,plte)
-            p01 = get_rgba(x0,  y0+1,w,h,bd,ct,bpp,rows,plte)
-            p11 = get_rgba(x0+1,y0+1,w,h,bd,ct,bpp,rows,plte)
+            p00=get_rgba(x0,  y0,  w,h,bd,ct,bpp,rows,plte)
+            p10=get_rgba(x0+1,y0,  w,h,bd,ct,bpp,rows,plte)
+            p01=get_rgba(x0,  y0+1,w,h,bd,ct,bpp,rows,plte)
+            p11=get_rgba(x0+1,y0+1,w,h,bd,ct,bpp,rows,plte)
             r=int(p00[0]*(1-fx)*(1-fy)+p10[0]*fx*(1-fy)+p01[0]*(1-fx)*fy+p11[0]*fx*fy)
             g=int(p00[1]*(1-fx)*(1-fy)+p10[1]*fx*(1-fy)+p01[1]*(1-fx)*fy+p11[1]*fx*fy)
             b=int(p00[2]*(1-fx)*(1-fy)+p10[2]*fx*(1-fy)+p01[2]*(1-fx)*fy+p11[2]*fx*fy)
             a=int(p00[3]*(1-fx)*(1-fy)+p10[3]*fx*(1-fy)+p01[3]*(1-fx)*fy+p11[3]*fx*fy)
             row_out.append((r,g,b,a))
         out.append(row_out)
-        if dy % 30 == 0: print(f"  {dy}/{nh}...")
+        if dy % 30 == 0: print(f"  resize {dy}/{nh}...")
 
     def chunk(tag, data):
         crc = zlib.crc32(tag+data) & 0xffffffff
@@ -103,4 +117,4 @@ def resize(src, dst, nw, nh):
         f.write(chunk(b'IEND', b''))
     print(f"Done: {dst} ({nw}x{nh})")
 
-resize('IMG_5804.png', 'apple-touch-icon.png', 180, 180)
+crop_and_resize('IMG_5804.png', 'apple-touch-icon.png', 180, 180)
