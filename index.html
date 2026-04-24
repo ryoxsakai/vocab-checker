@@ -761,7 +761,7 @@
       <label>終了番号</label>
       <div class="range-row">
         <button class="step-btn" onclick="step('rangeTo', -50)">－</button>
-        <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeTo" value="50" min="1" oninput="saveSettings()">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeTo" value="100" min="1" oninput="saveSettings()">
         <button class="step-btn" onclick="step('rangeTo', 50)">＋</button>
       </div>
     </div>
@@ -1221,7 +1221,7 @@ function resetAll() {
   // フォームを初期値に戻す
   selectBook('1900', false);
   document.getElementById('rangeFrom').value = '1';
-  document.getElementById('rangeTo').value = '50';
+  document.getElementById('rangeTo').value = '100';
   document.getElementById('orderMode').value = 'ordered';
   document.getElementById('maskMode').value = 'hide';
   saveSettings();
