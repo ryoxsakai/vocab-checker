@@ -743,8 +743,8 @@
   <div class="collapsible-body" id="collapsibleBody">
   <!-- Book selector -->
   <div class="book-selector">
-    <button class="book-btn active" data-book="1400" onclick="selectBook('1400')">Target 1400</button>
-    <button class="book-btn" data-book="1900" onclick="selectBook('1900')">Target 1900</button>
+    <button class="book-btn" data-book="1400" onclick="selectBook('1400')">Target 1400</button>
+    <button class="book-btn active" data-book="1900" onclick="selectBook('1900')">Target 1900</button>
   </div>
 
   <!-- Range -->
@@ -843,7 +843,7 @@
 <script>
 // ─── STATE ───
 let allWords = {};      // { '1400': [...], '1900': [...] }
-let currentBook = '1400';
+let currentBook = '1900';
 let currentWords = []; // words currently shown in table
 let flashIndex = 0;
 let flashWords = [];
@@ -1219,7 +1219,7 @@ function loadCollapsed() {
 // ─── RESET ───
 function resetAll() {
   // フォームを初期値に戻す
-  selectBook('1400', false);
+  selectBook('1900', false);
   document.getElementById('rangeFrom').value = '1';
   document.getElementById('rangeTo').value = '50';
   document.getElementById('orderMode').value = 'ordered';
