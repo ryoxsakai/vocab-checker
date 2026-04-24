@@ -59,6 +59,79 @@
     margin-bottom: 12px;
   }
 
+  .qr-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dim);
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    opacity: 0.45;
+    transition: opacity 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .qr-btn:hover { opacity: 1; }
+  .qr-btn:active { transform: scale(0.9); }
+
+  .qr-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .qr-overlay.open { opacity: 1; pointer-events: auto; }
+
+  .qr-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 28px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  }
+  .qr-card img {
+    width: min(220px, 72vw);
+    height: min(220px, 72vw);
+    image-rendering: pixelated;
+    border-radius: 8px;
+    display: block;
+  }
+  .qr-label {
+    font-size: 12px;
+    color: var(--text-sub);
+    letter-spacing: 0.06em;
+  }
+  .qr-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .qr-close-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
   .collapse-bar {
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
@@ -662,6 +735,9 @@
 <div class="header">
   <div class="header-top">
     <div class="header-title">📚 Target Vocab Checker</div>
+    <button class="qr-btn" onclick="openQR()" title="QRコードでシェア">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM13 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 13h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM16 13h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-4-6h2v2h-2zm0 4h2v2h-2z"/></svg>
+    </button>
   </div>
 
   <div class="collapsible-body" id="collapsibleBody">
@@ -749,6 +825,15 @@
       <button class="btn-next" onclick="flashNext()">次へ ▶</button>
       <button class="flash-speak-btn" onclick="speakCurrentFlash()" title="発音を聞く"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
     </div>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="qr-overlay" id="qrOverlay" onclick="closeQR()">
+  <div class="qr-card" onclick="event.stopPropagation()">
+    <button class="qr-close-btn" onclick="closeQR()">✕</button>
+    <img src="qr.png" alt="QRコード">
+    <span class="qr-label">カメラで読み取ってシェア</span>
   </div>
 </div>
 
@@ -1178,6 +1263,13 @@ function speak(word) {
 
 function speakCurrentFlash() {
   if (flashWords.length > 0) speak(flashWords[flashIndex].word);
+}
+
+function openQR() {
+  document.getElementById('qrOverlay').classList.add('open');
+}
+function closeQR() {
+  document.getElementById('qrOverlay').classList.remove('open');
 }
 
 function escHtml(str) {
