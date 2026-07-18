@@ -78,6 +78,7 @@ The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) and `g
 | `fontScale` | `1〜5` | 文字サイズ段階（3が標準）。`FONT_SCALE_MAP` で倍率に変換し `#tableArea` の `style.zoom` とフラッシュカードのフォントサイズに適用 |
 | `appMode` | `'vocab' \| 'grammar'` | 現在表示中のモード。`#vocabView`/`#grammarView` の表示切り替えとヘッダーアイコンの出し分けに使う |
 | `grammarData` | `Lesson[] \| null` | `grammar.json` 読み込み後の文法データ（初回に文法モードへ切り替えたときに遅延フェッチ） |
+| `grammarMaskMode` | `'show' \| 'hide'` | 文法モードの日本語訳・暗記リストの「」部分の初期表示（デフォルト `'show'`）。`document.documentElement` の `grammar-masked` クラスとして反映 |
 
 #### 冊子ごとの最大番号
 
@@ -96,6 +97,8 @@ const BOOK_MAX = { '1400': 1400, '1900': 1900, '1000': 1000 };
 | `LS_TABLE` | `vocab_table` | `{ book, words: number[] }` — 単語番号の順序付きリスト |
 | `LS_THEME` | `vocab_theme` | `'dark'` or `'light'` |
 | `LS_FONT_SCALE` | `vocab_font_scale` | `'1'`〜`'5'`（文字列） |
+| `LS_APP_MODE` | `vocab_app_mode` | `'vocab'` or `'grammar'` |
+| `LS_GRAMMAR_MASK` | `vocab_grammar_mask` | `'show'` or `'hide'` |
 
 #### CSV フォーマット
 
@@ -178,6 +181,14 @@ DOMContentLoaded
 文法モード目次アイコンタップ
   → openToc()          grammarData 未読み込みなら先に loadGrammarIfNeeded() を await → populateToc() → モーダルを開く
   → scrollToLesson(n)  目次項目タップで該当 #lesson-N へ scrollIntoView、モーダルを閉じる
+
+目次モーダル内のテーマ/文字サイズ/訳の表示切替アイコンタップ
+  → toggleTheme() / cycleFontScale()  単語帳と共通の関数をそのまま呼ぶ（.js-theme-btn クラスで設定・目次の両ボタンを同期）
+  → toggleGrammarMask()  grammarMaskMode を 'show'⇔'hide' でトグル → <html> に grammar-masked クラスを付け外し
+      → 個別にタップして開いていた .gmask.revealed を全解除（モード変更時にリセット）
+
+文法モードの訳・「」部分タップ
+  → #grammarContent への1回限りのイベント委譲（DOMContentLoaded 時に登録）で .gmask 要素の revealed クラスを toggle
 ```
 
 ### 主要関数一覧
@@ -204,15 +215,17 @@ DOMContentLoaded
 | `speak(word)` | Web Speech API で英語発音 |
 | `speakCurrentFlash()` | フラッシュカード現在単語を speak |
 | `openQR()` / `closeQR()` | QR オーバーレイの `.open` クラス付け外し（`openQR()` は先に `closeSettings()` を呼ぶ） |
-| `toggleTheme()` / `applyTheme()` / `loadTheme()` | ダーク/ライト切り替え。`<html data-theme>` を更新しテーマアイコンを差し替え |
+| `toggleTheme()` / `applyTheme()` / `loadTheme()` | ダーク/ライト切り替え。`<html data-theme>` を更新し `.js-theme-btn` クラスを持つ全ボタン（設定モーダル・目次モーダル）のアイコンを差し替え |
 | `cycleFontScale()` | 文字サイズアイコンのクリックハンドラ。`fontScale` を1→5→1でループさせ `setFontScale()` を呼ぶ |
-| `setFontScale(level)` / `applyFontScale()` / `loadFontScale()` | 文字サイズ5段階（`FONT_SCALE_MAP`）の適用・復元 |
+| `setFontScale(level)` / `applyFontScale()` / `loadFontScale()` | 文字サイズ5段階（`FONT_SCALE_MAP`）の適用・復元。`#tableArea` と `#grammarContent` の両方に `zoom` を適用する |
 | `shuffleArray(arr)` | Fisher-Yates in-place シャッフル |
 | `escHtml(str)` | `&`/`<`/`>` のエスケープ（innerHTML 挿入前に必ず使用） |
 | `showToast(msg)` | 2秒間トースト表示（タイマー重複防止あり） |
 | `toggleAppMode()` / `applyAppMode()` / `loadAppMode()` | 単語⇔文法モードの切り替え・復元。`applyAppMode()` がビュー表示とヘッダーアイコンの出し分けを行う |
 | `loadGrammarIfNeeded()` | `grammar.json` を初回のみキャッシュバスター付きで fetch（`grammarLoadPromise` で多重フェッチを防止）→ `renderGrammar()` |
 | `renderGrammar()` / `renderGrammarExample(ex)` / `renderGrammarMemo(memo)` | `grammarData` から文法モードの HTML を構築（□レター・〈タグ〉・▶注釈・パステルバッジ付き暗記リストを描画） |
+| `maskBracketed(escapedText)` | 暗記リスト項目の `「...」` 部分だけを `.gmask` span で包む（複数箇所あればすべて個別にラップ） |
+| `toggleGrammarMask()` / `applyGrammarMask()` / `loadGrammarMask()` | 文法モードの訳・「」部分の表示/非表示切り替え・復元。`<html>` に `grammar-masked` クラスを付け外しし、モード変更時は個別展開状態をリセット |
 | `openToc()` / `closeToc()` / `populateToc()` | 目次モーダルの `.open` クラス付け外しと一覧生成（初回のみ） |
 | `scrollToLesson(n)` | 目次から該当講へ `scrollIntoView`、モーダルを閉じる |
 
@@ -314,9 +327,10 @@ DOMContentLoaded
 | `.grammar-example` / `.grammar-letter` / `.grammar-sentence` / `.grammar-tag` | 例文カード。□の通しアルファベットをバッジ化した `.grammar-letter`、〈パターン名〉を表す `.grammar-tag` |
 | `.grammar-rewrite` | ＝/→ で始まる書き換え文（`rewrites`）の表示行 |
 | `.grammar-translation` / `.grammar-gloss` | 日本語訳と、"it = the dish" のような補足対応関係 |
-| `.grammar-note` / `.grammar-note-arrow` | ▶ で始まる注釈。矢印のみ accent 色で強調 |
+| `.grammar-note` / `.grammar-note-arrow` / `.grammar-note-text` | ▶ で始まる注釈。`display:flex` で矢印を固定幅の flex item にし、注釈テキストが折り返しても左端が揃う（ぶら下げインデント） |
 | `.grammar-memo` / `.grammar-memo-header` / `.memo-badge` / `.memo-header-suffix` | 暗記リストのカード。`.memo-badge` が〈見出し〉をパステルカラー（`--memo-bg`/`--memo-text`）のバッジにする |
-| `.grammar-memo-list` | ○項目の箇条書き（`::before` で ○ を描画、`list-style:none`）。560px 以上で2カラム |
+| `.grammar-memo-list` | ○項目の箇条書き。`::before` に `border-radius:50%` の空 `div` 相当（em単位）を描画し、文字サイズに追従する丸にする（`list-style:none`）。560px 以上で2カラム |
+| `.gmask` | 文法モードの訳・「」部分をタップで隠す/表示する要素。`grammar-masked` クラス下では `color:transparent; background:var(--red-dark)` で単語帳のマスクと同じ見た目にする。`.revealed` が付くと個別に表示される |
 | `.toc-list` / `.toc-item` / `.toc-num` | 目次モーダルの一覧・各講ボタン・講番号バッジ |
 
 ### モーダルパターン
@@ -374,7 +388,8 @@ element.classList.remove('open');
 - `selectBook(book, silent=false)`: currentBook 更新後に必ず `clampRangeInputs()` を呼ぶ。`silent=true` のときは `saveSettings()` を呼ばない（`loadSettings()` からの呼び出し時に使用）。
 - 冊子ごとの範囲上限は `BOOK_MAX` で一元管理。新しい冊子を追加するときはこのオブジェクトにエントリを追加するだけでよい。
 - `generateTable()` は成功時のみ `closeSettings()` を呼ぶ（該当語がない場合はトーストを出してモーダルを開いたままにし、その場で範囲を直せるようにする）。
-- `theme` のデフォルトは `'dark'`、`fontScale` のデフォルトは `3`。どちらも localStorage 未設定時のフォールバック値。
+- `theme` のデフォルトは `'dark'`、`fontScale` のデフォルトは `3`、`grammarMaskMode` のデフォルトは `'show'`。すべて localStorage 未設定時のフォールバック値。
+- テーマ切替ボタンは設定モーダルと目次モーダルの2箇所にあるため、`js-theme-btn` クラスで両方まとめて更新する（`id` は使わない）。新しくテーマボタンを追加する場合もこのクラスを付ける。
 - QR・テーマ・文字サイズのアイコンは設定モーダルの見出し行にあるため、`openQR()` は必ず `closeSettings()` を先に呼ぶ（`.modal-overlay` の z-index は共通の1000なので、閉じないと設定モーダルの背景が QR モーダルの上に重なり閉じるボタンが押せなくなる）。
 - 設定モーダルに閉じるボタン（×）は置かない。`#settingsOverlay` に `onclick="closeSettings()"`、モーダル本体（`.settings-modal`）に `onclick="event.stopPropagation()"` を付け、オーバーレイ部分をタップしたときだけ閉じるようにする（QRオーバーレイと同じパターン）。
 
