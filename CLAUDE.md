@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Target Vocabulary Checker — a client-side single-page application for Japanese English learners to study vocabulary from the Target 1400/1900 series. No backend, no build step, no package manager.
+Target Vocabulary Checker — a client-side single-page application for Japanese English learners to study vocabulary from the Target 1400/1900 series and the Target 1000 idiom list. No backend, no build step, no package manager.
 
 ## Running the App
 
@@ -13,7 +13,7 @@ python3 -m http.server 8080
 # then visit http://localhost:8080
 ```
 
-The CSV data files (`target1400.csv`, `target1900.csv`) must be in the same directory as `index.html`. If missing, the app falls back to inline sample data automatically.
+The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) must be in the same directory as `index.html`. If missing, the app falls back to inline sample data automatically.
 
 ---
 
@@ -67,14 +67,21 @@ The CSV data files (`target1400.csv`, `target1900.csv`) must be in the same dire
 
 | 変数 | 型 | 説明 |
 |---|---|---|
-| `allWords` | `{ '1400': WordObj[], '1900': WordObj[] }` | 全語彙（両冊） |
-| `currentBook` | `'1400' \| '1900'` | 現在選択中の冊子 |
+| `allWords` | `{ '1400': WordObj[], '1900': WordObj[], '1000': WordObj[] }` | 全語彙（単語1400・単語1900・熟語1000） |
+| `currentBook` | `'1400' \| '1900' \| '1000'` | 現在選択中の冊子 |
 | `currentWords` | `WordObj[]` | テーブルに表示中の単語（フィルタ・シャッフル済み） |
 | `maskStates` | `{ [key: string]: boolean }` | `${book}-${no}` → `true`=マスク中 |
 | `flashWords` | `WordObj[]` | フラッシュカード用コピー（`openFlash` 時に `currentWords` から複製） |
 | `flashIndex` | `number` | フラッシュカード現在位置（0-based） |
 | `tableSwapped` | `boolean` | `true`=左:単語・右:意味（デフォルト）、`false`=左:意味・右:単語 |
-| `formCollapsed` | `boolean` | ヘッダーの折り畳み状態 |
+
+#### 冊子ごとの最大番号
+
+```js
+const BOOK_MAX = { '1400': 1400, '1900': 1900, '1000': 1000 };
+```
+
+範囲入力（開始番号・終了番号）は `clampRangeInputs()` によって常に `[1, BOOK_MAX[currentBook]]` に収められる。冊子を切り替えたとき（`selectBook()`）と設定復元時（`loadSettings()`）の両方で呼び出す。
 
 #### localStorage キー
 
@@ -83,7 +90,6 @@ The CSV data files (`target1400.csv`, `target1900.csv`) must be in the same dire
 | `LS_SETTINGS` | `vocab_settings` | `{ book, from, to, order, mask }` |
 | `LS_MASKS` | `vocab_masks` | `maskStates` オブジェクト全体 |
 | `LS_TABLE` | `vocab_table` | `{ book, words: number[] }` — 単語番号の順序付きリスト |
-| `LS_COLLAPSED` | `vocab_collapsed` | `'0'` or `'1'` |
 
 #### CSV フォーマット
 
@@ -92,18 +98,23 @@ no,word,meaning
 1,ability,能力・才能
 ```
 
-`meaning` はカンマを含む場合があるため、パーサーは `parts.slice(2).join(',')` で結合する。
+`meaning` はカンマを含む場合があるため、パーサーは `parts.slice(2).join(',')` で結合する。パーサーはクォート（`"..."`）を解釈しないため、**CSV 生成時にカンマを含む `meaning` をダブルクォートで囲んではいけない**（そのまま表示に混入する）。カンマはクォートなしでそのまま書く。
+
+`target1000.csv` は Target 1000（熟語）のデータで、`no` は 1〜1000。
 
 ### データフロー
 
 ```
 DOMContentLoaded
-  → loadSettings()     UI 状態復元（select・input 値）
+  → loadSettings()     UI 状態復元（select・input 値、clampRangeInputs() も実行）
   → loadMasks()        maskStates 復元
-  → loadCollapsed()    折り畳み状態復元
   → loadBook('1400')   fetch CSV → parseCSV() → allWords['1400']
   → loadBook('1900')   fetch CSV → parseCSV() → allWords['1900']
+  → loadBook('1000')   fetch CSV → parseCSV() → allWords['1000']
   → restoreTable()     LS_TABLE から前回の表を再描画
+
+設定アイコンタップ
+  → openSettings()     設定モーダル（範囲・冊子指定フォーム）を開く
 
 ユーザー操作（「✦ 生成」ボタン）
   → generateTable()
@@ -111,6 +122,7 @@ DOMContentLoaded
       → maskStates を maskMode に従い初期化
       → saveTable()
       → renderTable()
+      → closeSettings()  生成成功時のみモーダルを閉じて表を見せる
 
 テーブルセルタップ
   → tapMask(tdEl)      mask-el の display を toggle → saveMasks()
@@ -137,13 +149,14 @@ DOMContentLoaded
 | `saveSettings()` / `loadSettings()` | LS_SETTINGS の読み書き |
 | `saveMasks()` / `loadMasks()` | LS_MASKS の読み書き |
 | `saveTable(words)` / `restoreTable()` | LS_TABLE の読み書き |
-| `selectBook(book, silent)` | currentBook 更新・ボタン active クラス切り替え（silent=true は saveSettings をスキップ） |
-| `step(id, delta)` | range input を±delta して saveSettings |
-| `resetAll()` | 全状態を初期値（book=1900, from=1, to=100, ordered, hide, tableSwapped=true）に戻す |
+| `selectBook(book, silent)` | currentBook 更新・ボタン active クラス切り替え・`clampRangeInputs()`（silent=true は saveSettings をスキップ） |
+| `clampRangeInputs()` | 開始・終了番号を `BOOK_MAX[currentBook]` の範囲に収める |
+| `step(id, delta)` | range input を±delta して `BOOK_MAX[currentBook]` を上限にクランプ、saveSettings |
+| `openSettings()` / `closeSettings()` | 設定モーダル（範囲・冊子指定フォーム）の `.open` クラス付け外し |
+| `resetAll()` | 全状態を初期値（book=1900, from=1, to=100, ordered, hide, tableSwapped=true）に戻し、設定モーダルを閉じる |
 | `speak(word)` | Web Speech API で英語発音 |
 | `speakCurrentFlash()` | フラッシュカード現在単語を speak |
 | `openQR()` / `closeQR()` | QR オーバーレイの `.open` クラス付け外し |
-| `toggleCollapse()` / `applyCollapse()` | ヘッダー折り畳み |
 | `shuffleArray(arr)` | Fisher-Yates in-place シャッフル |
 | `escHtml(str)` | `&`/`<`/`>` のエスケープ（innerHTML 挿入前に必ず使用） |
 | `showToast(msg)` | 2秒間トースト表示（タイマー重複防止あり） |
@@ -195,9 +208,10 @@ DOMContentLoaded
 
 | クラス | 説明 |
 |---|---|
-| `.header` | sticky ヘッダー。`linear-gradient(135deg, #1a1d27, #131620)`、z-index:100 |
-| `.collapsible-body` / `.collapsed` | `.collapsed` で `max-height:0; overflow:hidden` に折り畳む |
-| `.book-btn` / `.book-btn.active` | 冊子選択ボタン。`.active` で accent 背景 |
+| `.header` | sticky ヘッダー。`linear-gradient(135deg, #1a1d27, #131620)`、z-index:100。タイトルとアイコン2つのみのシンプルな1行構成 |
+| `.header-icons` | ヘッダー右端のアイコンボタン群（設定・QR）をまとめる flex コンテナ |
+| `.icon-btn` | ヘッダーのアイコンボタン共通スタイル（opacity:0.85、hover で 1、active でスケールダウン） |
+| `.book-btn` / `.book-btn.active` | 冊子選択ボタン（単語1400・単語1900・熟語1000 の3つ）。`.active` で accent 背景 |
 | `.step-btn` | 数値入力の±ボタン |
 | `.generate-btn` | 生成ボタン（accent グラデーション背景） |
 | `.reset-btn` | リセットボタン（surface2 背景、border あり） |
@@ -211,8 +225,10 @@ DOMContentLoaded
 | `.status-bar` | テーブル上部のステータスバー（語数・スワップ・フラッシュチェックボタン） |
 | `.swap-btn` / `.swap-btn.active` | 列入れ替えボタン（active で accent 背景） |
 | `.flash-btn` | フラッシュチェック起動ボタン |
-| `.modal-overlay` / `.modal-overlay.open` | フラッシュカードモーダル背景。`.open` で `opacity:1; pointer-events:all` |
+| `.modal-overlay` / `.modal-overlay.open` | モーダル背景（設定・フラッシュカード共通）。`.open` で `opacity:1; pointer-events:all` |
 | `.modal` | モーダル本体（max-width:380px、`transform:translateY(20px→0)` でアニメーション） |
+| `.settings-modal` | 設定モーダル用の `.modal` 修飾クラス。上下 margin と box-shadow を強めて「浮いている」見た目にする |
+| `.modal-title` | 設定モーダルの見出しテキスト（15px, 700, margin-bottom:20px） |
 | `.modal-close` | モーダル閉じる×ボタン（26×26px 丸ボタン、hover で red 背景） |
 | `.progress-bar` / `.progress-fill` | 進捗バー（accent→accent2 グラデーション） |
 | `.flash-word` | フラッシュカードのメイン単語（最大 64px、JS でサイズ動的変更） |
@@ -221,7 +237,6 @@ DOMContentLoaded
 | `.flash-speak-btn` | フラッシュカード内音声ボタン（48×48px、surface2 背景、flex 配置） |
 | `.btn-next` | 「次へ」ボタン（flex:1、accent グラデーション） |
 | `.btn-prev` | 「◀戻る」ボタン（48px 固定、surface2 背景） |
-| `.qr-btn` | QR アイコンボタン（ヘッダー右端、opacity:0.85） |
 | `.qr-overlay` / `.qr-overlay.open` | QR モーダル背景（z-index:500、opacity トランジション） |
 | `.qr-card` | QR モーダル本体（surface 背景、flex 縦並び） |
 | `.toast` / `.toast.show` | トースト通知（fixed、bottom:24px、`translateY(80px→0)` アニメーション、z-index:2000） |
@@ -279,8 +294,10 @@ element.classList.remove('open');
 ### 状態管理
 
 - `tableSwapped` のデフォルトは `true`（左:単語、右:意味）。
-- `resetAll()` が戻るべきデフォルト値: book=`'1900'`、from=`1`、to=`100`、order=`ordered`、mask=`hide`、`tableSwapped=true`。
-- `selectBook(book, silent=false)`: `silent=true` のときは `saveSettings()` を呼ばない（`loadSettings()` からの呼び出し時に使用）。
+- `resetAll()` が戻るべきデフォルト値: book=`'1900'`、from=`1`、to=`100`、order=`ordered`、mask=`hide`、`tableSwapped=true`。処理の最後に `closeSettings()` を呼び設定モーダルを閉じる。
+- `selectBook(book, silent=false)`: currentBook 更新後に必ず `clampRangeInputs()` を呼ぶ。`silent=true` のときは `saveSettings()` を呼ばない（`loadSettings()` からの呼び出し時に使用）。
+- 冊子ごとの範囲上限は `BOOK_MAX` で一元管理。新しい冊子を追加するときはこのオブジェクトにエントリを追加するだけでよい。
+- `generateTable()` は成功時のみ `closeSettings()` を呼ぶ（該当語がない場合はトーストを出してモーダルを開いたままにし、その場で範囲を直せるようにする）。
 
 ### テーブル描画
 
@@ -305,6 +322,7 @@ element.classList.remove('open');
 index.html            # アプリ本体（HTML + CSS + JS、すべてインライン）
 target1400.csv        # Target 1400 語彙データ（no,word,meaning）
 target1900.csv        # Target 1900 語彙データ（no,word,meaning）
+target1000.csv        # Target 1000 熟語データ（no,word,meaning）
 apple-touch-icon.png  # iOS ホーム画面アイコン（180×180 px RGBA PNG）
 qr.png                # QR コード画像（サイトURL→シェアモーダルで表示）
 resize_icon.py        # アイコン作成用スクリプト（IMG_5804.png → apple-touch-icon.png）
