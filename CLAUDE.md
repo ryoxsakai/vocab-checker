@@ -324,7 +324,9 @@ DOMContentLoaded
 | `.loading-note` | CSV/grammar.json 読み込み中テキスト |
 | `.grammar-lesson` | 文法モードの講セクション。`id="lesson-N"` を持ち目次からの `scrollIntoView` 先になる（`scroll-margin-top` で sticky ヘッダー分オフセット） |
 | `.grammar-section-title` | 節見出し（「1. 第1文型」等）。左ボーダーで強調 |
-| `.grammar-example` / `.grammar-letter` / `.grammar-sentence` / `.grammar-tag` | 例文カード。□の通しアルファベットをバッジ化した `.grammar-letter`、〈パターン名〉を表す `.grammar-tag` |
+| `.grammar-example` | 例文カード全体 |
+| `.grammar-example-head` / `.grammar-letter` / `.grammar-tag` | 見出し行。□の通しアルファベットをバッジ化した `.grammar-letter` と〈パターン名〉の `.grammar-tag` を横並びにする（タグがない例文はレターのみ）。文が短いとタグだけ次行に折り返してずれるため、例文本体（`.grammar-sentence`）とは別の行に分離している |
+| `.grammar-sentence` | 例文本体。`display:block` で見出し行の下に独立した行として置く（幅いっぱいに折り返す） |
 | `.grammar-rewrite` | ＝/→ で始まる書き換え文（`rewrites`）の表示行 |
 | `.grammar-translation` / `.grammar-gloss` | 日本語訳と、"it = the dish" のような補足対応関係 |
 | `.grammar-note` / `.grammar-note-arrow` / `.grammar-note-text` | ▶ で始まる注釈。`display:flex` で矢印を固定幅の flex item にし、注釈テキストが折り返しても左端が揃う（ぶら下げインデント） |

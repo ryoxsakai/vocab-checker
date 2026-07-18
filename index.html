@@ -784,11 +784,11 @@
     padding: 12px 14px;
     margin-bottom: 8px;
   }
-  .grammar-example-row {
+  .grammar-example-head {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    margin-bottom: 8px;
   }
   .grammar-letter {
     flex-shrink: 0;
@@ -805,8 +805,7 @@
     font-family: 'Outfit', sans-serif;
   }
   .grammar-sentence {
-    flex: 1;
-    min-width: 160px;
+    display: block;
     font-family: 'Outfit', monospace;
     font-weight: 600;
     color: var(--text);
@@ -828,7 +827,7 @@
     font-family: 'Outfit', monospace;
     color: var(--text-sub);
     font-size: 13px;
-    margin: 4px 0 0 29px;
+    margin: 4px 0 0;
     display: flex;
     gap: 6px;
     align-items: baseline;
@@ -838,7 +837,7 @@
     font-family: 'Noto Sans JP', sans-serif;
     color: var(--red);
     font-size: 13px;
-    margin: 6px 0 0 29px;
+    margin: 6px 0 0;
     line-height: 1.6;
   }
   .grammar-gloss {
@@ -851,7 +850,7 @@
     font-family: 'Noto Sans JP', sans-serif;
     color: var(--text-sub);
     font-size: 12px;
-    margin: 6px 0 0 29px;
+    margin: 6px 0 0;
     line-height: 1.6;
   }
   .grammar-note-arrow { color: var(--accent2); flex-shrink: 0; }
@@ -1407,11 +1406,13 @@ function renderGrammar() {
 
 function renderGrammarExample(ex) {
   // □ の通しアルファベット・〈タグ〉・▶ の注釈をそのまま再現する
-  let h = '<div class="grammar-example"><div class="grammar-example-row">';
+  // レター＋〈タグ〉を見出し行にまとめ、例文はその下に独立した行として置く
+  // （文が短いと flex-wrap でタグだけ次行に落ちてずれて見えるため）
+  let h = '<div class="grammar-example"><div class="grammar-example-head">';
   h += `<span class="grammar-letter">${escHtml(ex.letter)}</span>`;
-  h += `<span class="grammar-sentence">${escHtml(ex.sentence)}</span>`;
   if (ex.tag) h += `<span class="grammar-tag">〈${escHtml(ex.tag)}〉</span>`;
   h += '</div>';
+  h += `<span class="grammar-sentence">${escHtml(ex.sentence)}</span>`;
   ex.rewrites.forEach(rw => {
     h += `<div class="grammar-rewrite"><span>${escHtml(rw.sentence)}</span>`;
     if (rw.tag) h += `<span class="grammar-tag">〈${escHtml(rw.tag)}〉</span>`;
