@@ -27,8 +27,28 @@
     --text-sub: #8b90b0;
     --text-dim: #555a7a;
     --green: #4caf84;
+    --header-grad-1: #1a1d27;
+    --header-grad-2: #131620;
     --radius: 12px;
     --radius-sm: 8px;
+  }
+
+  /* ── ライトモード ── */
+  :root[data-theme="light"] {
+    --bg: #f2f3f8;
+    --surface: #ffffff;
+    --surface2: #eceef6;
+    --border: #dbdeea;
+    --accent: #5b6af0;
+    --accent2: #4653d4;
+    --red: #c23636;
+    --red-dark: #d94848;
+    --text: #1a1d27;
+    --text-sub: #55597a;
+    --text-dim: #9195b3;
+    --green: #2f9d6f;
+    --header-grad-1: #ffffff;
+    --header-grad-2: #eceef6;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,20 +63,20 @@
 
   /* ── HEADER ── */
   .header {
-    background: linear-gradient(135deg, #1a1d27 0%, #131620 100%);
+    background: linear-gradient(135deg, var(--header-grad-1) 0%, var(--header-grad-2) 100%);
     border-bottom: 1px solid var(--border);
     padding: 16px 20px;
     position: sticky;
     top: 0;
     z-index: 100;
     box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    transition: background 0.2s;
   }
 
   .header-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
   }
 
   .header-icons {
@@ -180,14 +200,13 @@
 
   /* ── CONTROLS ── */
   .controls {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
     gap: 10px;
     margin-bottom: 14px;
   }
-
-  @media (min-width: 480px) {
-    .controls { grid-template-columns: 1fr 1fr; }
+  .controls .control-group {
+    flex: 1;
+    min-width: 0;
   }
 
   .control-group {
@@ -212,6 +231,8 @@
 
   .range-input {
     flex: 1;
+    min-width: 0;
+    width: 0;
     background: var(--surface2);
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
@@ -219,7 +240,7 @@
     font-family: inherit;
     font-size: 16px;
     font-weight: 600;
-    padding: 8px 10px;
+    padding: 8px 6px;
     text-align: center;
     outline: none;
     transition: border-color 0.2s;
@@ -286,6 +307,7 @@
     gap: 10px;
     padding-bottom: 14px;
   }
+
   .generate-btn {
     padding: 11px 20px;
     border-radius: var(--radius);
@@ -508,13 +530,27 @@
     box-shadow: 0 30px 70px rgba(0,0,0,0.65);
   }
 
+  .modal-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
   .modal-title {
     font-size: 15px;
     font-weight: 700;
     color: var(--text);
-    margin-bottom: 20px;
     letter-spacing: 0.02em;
   }
+
+  .modal-title-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .modal-title-actions .icon-btn svg { width: 20px; height: 20px; }
 
   .modal-close {
     position: absolute;
@@ -727,18 +763,25 @@
       <button class="icon-btn" onclick="openSettings()" title="単語範囲を設定">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
       </button>
-      <button class="icon-btn" onclick="openQR()" title="QRコードでシェア">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM13 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 13h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM16 13h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-4-6h2v2h-2zm0 4h2v2h-2z"/></svg>
-      </button>
     </div>
   </div>
 </div><!-- /header -->
 
 <!-- SETTINGS MODAL -->
-<div class="modal-overlay" id="settingsOverlay">
-  <div class="modal settings-modal">
-    <button class="modal-close" onclick="closeSettings()">✕</button>
-    <div class="modal-title">単語範囲を設定</div>
+<div class="modal-overlay" id="settingsOverlay" onclick="closeSettings()">
+  <div class="modal settings-modal" onclick="event.stopPropagation()">
+    <div class="modal-title-row">
+      <div class="modal-title">単語範囲を設定</div>
+      <div class="modal-title-actions">
+        <button class="icon-btn" onclick="openQR()" title="QRコードでシェア">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM13 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 13h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM16 13h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-4-6h2v2h-2zm0 4h2v2h-2z"/></svg>
+        </button>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title=""></button>
+        <button class="icon-btn" onclick="cycleFontScale()" title="文字サイズを変更">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><text x="1" y="16" font-size="11" font-family="Arial, sans-serif" font-weight="700">A</text><text x="11" y="19" font-size="17" font-family="Arial, sans-serif" font-weight="700">A</text></svg>
+        </button>
+      </div>
+    </div>
 
     <!-- Book selector -->
     <div class="book-selector">
@@ -846,19 +889,27 @@ let flashIndex = 0;
 let flashWords = [];
 let maskStates = {};   // key: `${book}-${no}` → true=masked
 let tableSwapped = true; // false=左意味・右スペル、true=左スペル・右意味（デフォルト）
+let theme = 'dark';     // 'dark' | 'light'
+let fontScale = 3;      // 1〜5の5段階（3が標準サイズ）
 
 // 冊子ごとの最大掲載番号（範囲指定の上限に使う）
 const BOOK_MAX = { '1400': 1400, '1900': 1900, '1000': 1000 };
+// 文字サイズ段階ごとの拡大率
+const FONT_SCALE_MAP = { 1: 0.85, 2: 0.925, 3: 1, 4: 1.15, 5: 1.3 };
 
 // ─── LS KEYS ───
-const LS_SETTINGS = 'vocab_settings';
-const LS_MASKS    = 'vocab_masks';
-const LS_TABLE    = 'vocab_table';
+const LS_SETTINGS   = 'vocab_settings';
+const LS_MASKS      = 'vocab_masks';
+const LS_TABLE      = 'vocab_table';
+const LS_THEME      = 'vocab_theme';
+const LS_FONT_SCALE = 'vocab_font_scale';
 
 // ─── INIT ───
 window.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
   loadMasks();
+  loadTheme();
+  loadFontScale();
   await loadBook('1400');
   await loadBook('1900');
   await loadBook('1000');
@@ -866,7 +917,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadBook(book) {
-  const filename = `target${book}.csv`;
+  // CDN/ブラウザキャッシュを回避し、常に最新のCSVを取得する
+  const filename = `target${book}.csv?_=${Date.now()}`;
   try {
     const resp = await fetch(filename);
     if (!resp.ok) throw new Error('not found');
@@ -941,6 +993,55 @@ function loadMasks() {
 
 function saveMasks() {
   localStorage.setItem(LS_MASKS, JSON.stringify(maskStates));
+}
+
+// ─── THEME ───
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  localStorage.setItem(LS_THEME, theme);
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeBtn');
+  btn.innerHTML = theme === 'dark'
+    ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>' // 月アイコン（現在ダーク→押すとライトへ）
+    : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0-5v2m0 16v2M4.2 4.2l1.4 1.4m12.8 12.8 1.4 1.4M2 12h2m16 0h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>'; // 太陽アイコン（現在ライト→押すとダークへ）
+  btn.title = theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替';
+}
+
+function loadTheme() {
+  try {
+    theme = localStorage.getItem(LS_THEME) === 'light' ? 'light' : 'dark';
+  } catch(e) { theme = 'dark'; }
+  applyTheme();
+}
+
+// ─── FONT SCALE ───
+// アイコン1個で1→5→1とループさせ、現在値はトーストで知らせる（QRボタンと同じさりげない見た目にするため専用ボタンは並べない）
+function cycleFontScale() {
+  const next = fontScale >= 5 ? 1 : fontScale + 1;
+  setFontScale(next);
+  showToast(`文字サイズ ${next}/5`);
+}
+
+function setFontScale(level) {
+  fontScale = level;
+  applyFontScale();
+  localStorage.setItem(LS_FONT_SCALE, String(level));
+}
+
+function applyFontScale() {
+  document.getElementById('tableArea').style.zoom = FONT_SCALE_MAP[fontScale];
+}
+
+function loadFontScale() {
+  try {
+    const saved = parseInt(localStorage.getItem(LS_FONT_SCALE));
+    fontScale = FONT_SCALE_MAP[saved] ? saved : 3;
+  } catch(e) { fontScale = 3; }
+  applyFontScale();
 }
 
 // ─── TABLE SAVE/RESTORE ───
@@ -1055,8 +1156,9 @@ function renderTable(words) {
   html += '</tr></thead><tbody>';
 
   // コンテンツに合わせたスタイル（英語用・日本語用）
-  const wordStyle    = 'font-family:\'Outfit\',monospace;font-weight:600;color:#e8eaf6;font-size:clamp(12px,4vw,18px);';
-  const meaningStyle = 'font-family:\'Noto Sans JP\',sans-serif;font-weight:500;color:#e05555;font-size:13px;';
+  // color は var() 参照にして、ダーク/ライト切り替え時に再描画なしで追従させる
+  const wordStyle    = 'font-family:\'Outfit\',monospace;font-weight:600;color:var(--text);font-size:clamp(12px,4vw,18px);';
+  const meaningStyle = 'font-family:\'Noto Sans JP\',sans-serif;font-weight:500;color:var(--red);font-size:13px;';
 
   for (let i = 0; i < words.length; i++) {
     const w = words[i];
@@ -1068,11 +1170,11 @@ function renderTable(words) {
     const leftText  = swapped ? w.word    : w.meaning;
     const rightText = swapped ? w.meaning : w.word;
     const leftStyleBase = swapped ? wordStyle : meaningStyle;
-    const leftStyle  = leftStyleBase.replace('color:#e05555', 'color:#e8eaf6');
+    const leftStyle  = leftStyleBase.replace('color:var(--red)', 'color:var(--text)');
     const rightStyle = swapped ? meaningStyle : wordStyle;
     // 右が英語のとき赤にするか白にするかは色で区別
     // → 右は常に赤系にしたいので rightStyle の color を上書き
-    const rightStyleRed = rightStyle.replace('color:#e8eaf6', 'color:#e05555');
+    const rightStyleRed = rightStyle.replace('color:var(--text)', 'color:var(--red)');
 
     // 左セル（常に白）
     const leftCell = '<td class="td-word"><span style="' + leftStyle + '">' + escHtml(leftText) + '</span></td>';
@@ -1080,7 +1182,7 @@ function renderTable(words) {
     // 右セル（常に赤）
     let rightCell;
     if (mode === 'hide') {
-      const maskStyle = 'position:absolute;inset:-2px -4px;background:#c03030;border-radius:4px;cursor:pointer;' + (masked ? '' : 'display:none;');
+      const maskStyle = 'position:absolute;inset:-2px -4px;background:var(--red-dark);border-radius:4px;cursor:pointer;' + (masked ? '' : 'display:none;');
       rightCell = '<td class="td-meaning" style="position:relative;" data-key="' + key + '" onclick="tapMask(this)">'
         + '<span style="' + rightStyleRed + 'position:relative;">' + escHtml(rightText) + '</span>'
         + '<span class="mask-el" style="' + maskStyle + '"></span>'
@@ -1149,6 +1251,7 @@ function renderFlashCard() {
   const mainText  = tableSwapped ? w.word    : w.meaning;
   const coverText = tableSwapped ? w.meaning : w.word;
 
+  const scale = FONT_SCALE_MAP[fontScale];
   const wordEl = document.getElementById('flashWord');
   wordEl.textContent = mainText;
   const vw = window.innerWidth;
@@ -1157,7 +1260,7 @@ function renderFlashCard() {
   const size = isJpMain
     ? (vw >= 400 ? 28 : vw >= 320 ? 22 : 18)
     : (vw >= 400 ? 48 : vw >= 320 ? 36 : 28);
-  wordEl.style.fontSize = size + 'px';
+  wordEl.style.fontSize = (size * scale) + 'px';
   wordEl.style.fontFamily = isJpMain ? "'Noto Sans JP', sans-serif" : "'Outfit', monospace";
 
   // カバー（答え）のフォント：メインと逆のコンテンツ
@@ -1165,7 +1268,7 @@ function renderFlashCard() {
   const meaningEl = document.getElementById('flashMeaning');
   meaningEl.textContent = coverText;
   meaningEl.style.fontFamily = isJpCover ? "'Noto Sans JP', sans-serif" : "'Outfit', monospace";
-  meaningEl.style.fontSize   = isJpCover ? '16px' : '20px';
+  meaningEl.style.fontSize   = (isJpCover ? 16 : 20) * scale + 'px';
   meaningEl.style.fontWeight = isJpCover ? '500' : '600';
   document.getElementById('flashCover').textContent = 'タップして表示';
   document.getElementById('flashCover').classList.remove('hidden');
@@ -1262,6 +1365,8 @@ function speakCurrentFlash() {
 }
 
 function openQR() {
+  // 設定モーダルの上に重なって閉じるボタンが押せなくなるため、先に閉じる
+  closeSettings();
   document.getElementById('qrOverlay').classList.add('open');
 }
 function closeQR() {

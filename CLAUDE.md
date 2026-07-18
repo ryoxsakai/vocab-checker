@@ -42,7 +42,7 @@ The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) must b
 
 - **Web Speech API** (`window.speechSynthesis`): 英単語の発音再生。`lang: 'en-US'` 固定。対応ブラウザ外では無音で無視される（`if (!window.speechSynthesis) return`）。
 - **localStorage**: 全 UI 状態の永続化（後述）。
-- **fetch API**: CSV ファイルの非同期読み込み（`async/await`）。
+- **fetch API**: CSV ファイルの非同期読み込み（`async/await`）。GitHub Pages の CDN/ブラウザキャッシュを回避するため、`loadBook()` は `?_=${Date.now()}` のキャッシュバスター付きURLで fetch する（`<head>` の `Cache-Control`/`Pragma`/`Expires` meta タグだけでは静的ホスティングの実 HTTP ヘッダーを上書きできないため）。
 
 ### iOS PWA 対応
 
@@ -74,6 +74,8 @@ The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) must b
 | `flashWords` | `WordObj[]` | フラッシュカード用コピー（`openFlash` 時に `currentWords` から複製） |
 | `flashIndex` | `number` | フラッシュカード現在位置（0-based） |
 | `tableSwapped` | `boolean` | `true`=左:単語・右:意味（デフォルト）、`false`=左:意味・右:単語 |
+| `theme` | `'dark' \| 'light'` | 現在のカラーテーマ。`document.documentElement`（`<html>`）の `data-theme` 属性として反映 |
+| `fontScale` | `1〜5` | 文字サイズ段階（3が標準）。`FONT_SCALE_MAP` で倍率に変換し `#tableArea` の `style.zoom` とフラッシュカードのフォントサイズに適用 |
 
 #### 冊子ごとの最大番号
 
@@ -90,6 +92,8 @@ const BOOK_MAX = { '1400': 1400, '1900': 1900, '1000': 1000 };
 | `LS_SETTINGS` | `vocab_settings` | `{ book, from, to, order, mask }` |
 | `LS_MASKS` | `vocab_masks` | `maskStates` オブジェクト全体 |
 | `LS_TABLE` | `vocab_table` | `{ book, words: number[] }` — 単語番号の順序付きリスト |
+| `LS_THEME` | `vocab_theme` | `'dark'` or `'light'` |
+| `LS_FONT_SCALE` | `vocab_font_scale` | `'1'`〜`'5'`（文字列） |
 
 #### CSV フォーマット
 
@@ -114,7 +118,15 @@ DOMContentLoaded
   → restoreTable()     LS_TABLE から前回の表を再描画
 
 設定アイコンタップ
-  → openSettings()     設定モーダル（範囲・冊子指定フォーム）を開く
+  → openSettings()     設定モーダル（範囲・冊子指定フォーム、QRシェア、テーマ・文字サイズ）を開く
+
+設定モーダル外（オーバーレイ）タップ
+  → closeSettings()    settingsOverlay に onclick、モーダル本体には event.stopPropagation() で内側クリックは無視
+
+設定モーダル見出し行のQR/テーマ/文字サイズアイコンタップ
+  → openQR()           先に closeSettings()（z-indexで設定モーダルの下に隠れるのを防ぐ）→ QRオーバーレイを開く
+  → toggleTheme()      <html> の data-theme 属性を切り替え → CSS変数がカスケードし再描画不要で全体に反映
+  → cycleFontScale()   fontScale を 1→5→1 とループさせ setFontScale() を呼ぶ、トーストで現在値を通知
 
 ユーザー操作（「✦ 生成」ボタン）
   → generateTable()
@@ -152,11 +164,14 @@ DOMContentLoaded
 | `selectBook(book, silent)` | currentBook 更新・ボタン active クラス切り替え・`clampRangeInputs()`（silent=true は saveSettings をスキップ） |
 | `clampRangeInputs()` | 開始・終了番号を `BOOK_MAX[currentBook]` の範囲に収める |
 | `step(id, delta)` | range input を±delta して `BOOK_MAX[currentBook]` を上限にクランプ、saveSettings |
-| `openSettings()` / `closeSettings()` | 設定モーダル（範囲・冊子指定フォーム）の `.open` クラス付け外し |
+| `openSettings()` / `closeSettings()` | 設定モーダル（範囲・冊子指定フォーム）の `.open` クラス付け外し。閉じるボタンはなく、オーバーレイタップ（`closeSettings()`）と生成/リセット成功時のみで閉じる |
 | `resetAll()` | 全状態を初期値（book=1900, from=1, to=100, ordered, hide, tableSwapped=true）に戻し、設定モーダルを閉じる |
 | `speak(word)` | Web Speech API で英語発音 |
 | `speakCurrentFlash()` | フラッシュカード現在単語を speak |
-| `openQR()` / `closeQR()` | QR オーバーレイの `.open` クラス付け外し |
+| `openQR()` / `closeQR()` | QR オーバーレイの `.open` クラス付け外し（`openQR()` は先に `closeSettings()` を呼ぶ） |
+| `toggleTheme()` / `applyTheme()` / `loadTheme()` | ダーク/ライト切り替え。`<html data-theme>` を更新しテーマアイコンを差し替え |
+| `cycleFontScale()` | 文字サイズアイコンのクリックハンドラ。`fontScale` を1→5→1でループさせ `setFontScale()` を呼ぶ |
+| `setFontScale(level)` / `applyFontScale()` / `loadFontScale()` | 文字サイズ5段階（`FONT_SCALE_MAP`）の適用・復元 |
 | `shuffleArray(arr)` | Fisher-Yates in-place シャッフル |
 | `escHtml(str)` | `&`/`<`/`>` のエスケープ（innerHTML 挿入前に必ず使用） |
 | `showToast(msg)` | 2秒間トースト表示（タイマー重複防止あり） |
@@ -192,25 +207,33 @@ DOMContentLoaded
 
   /* その他 */
   --green:     #4caf84;   /* トースト背景・成功色 */
+  --header-grad-1: #1a1d27; /* ヘッダーグラデーション開始色 */
+  --header-grad-2: #131620; /* ヘッダーグラデーション終了色 */
   --radius:    12px;      /* 標準角丸 */
   --radius-sm:  8px;      /* 小さい角丸（行セル・小ボタン） */
 }
 ```
 
+### ライトモード
+
+`:root[data-theme="light"]` で上記トークンをすべて上書きする（`--accent`/`--accent2` はほぼ据え置き、背景・テキスト・赤系のみ明るい配色に変更）。JS の `toggleTheme()` が `document.documentElement` に `data-theme="light"|"dark"` をセットするだけで、CSS変数がカスケードして全体に反映される。
+
+**重要**: `renderTable()` が生成するテーブルセルの inline style は `color:#e8eaf6` のようなハードコードされた16進色ではなく、必ず `color:var(--text)` / `color:var(--red)` を使うこと。ハードコードすると、テーマ切り替え時に再描画なしでは追従できなくなる（既存テーブルは再描画せず、var() の再評価だけで色が変わる設計）。
+
 ### ベーススタイル
 
 - `* { box-sizing: border-box; margin: 0; padding: 0; }`
 - `body`: `font-family: 'Outfit', 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 60px;`
-- ダークテーマのみ（ライトモード切り替えなし）
+- ダーク/ライトの2テーマ（デフォルトはダーク）。`.header` の背景グラデーションも `--header-grad-1`/`-2` 経由でテーマに追従
 - スクロールバー: width 4px、border-radius 2px（webkit のみ対応）
 
 ### 主要コンポーネントクラス
 
 | クラス | 説明 |
 |---|---|
-| `.header` | sticky ヘッダー。`linear-gradient(135deg, #1a1d27, #131620)`、z-index:100。タイトルとアイコン2つのみのシンプルな1行構成 |
-| `.header-icons` | ヘッダー右端のアイコンボタン群（設定・QR）をまとめる flex コンテナ |
-| `.icon-btn` | ヘッダーのアイコンボタン共通スタイル（opacity:0.85、hover で 1、active でスケールダウン） |
+| `.header` | sticky ヘッダー。`linear-gradient(135deg, var(--header-grad-1), var(--header-grad-2))`、z-index:100。タイトルと設定アイコンのみのシンプルな1行構成（上下 padding 16px で対称） |
+| `.header-icons` | ヘッダー右端のアイコンボタン群（現在は設定アイコンのみ）をまとめる flex コンテナ |
+| `.icon-btn` | ヘッダー／モーダル内のアイコンボタン共通スタイル（opacity:0.85、hover で 1、active でスケールダウン）。QRボタンも設定モーダル内でこのクラスを使う |
 | `.book-btn` / `.book-btn.active` | 冊子選択ボタン（単語1400・単語1900・熟語1000 の3つ）。`.active` で accent 背景 |
 | `.step-btn` | 数値入力の±ボタン |
 | `.generate-btn` | 生成ボタン（accent グラデーション背景） |
@@ -227,9 +250,11 @@ DOMContentLoaded
 | `.flash-btn` | フラッシュチェック起動ボタン |
 | `.modal-overlay` / `.modal-overlay.open` | モーダル背景（設定・フラッシュカード共通）。`.open` で `opacity:1; pointer-events:all` |
 | `.modal` | モーダル本体（max-width:380px、`transform:translateY(20px→0)` でアニメーション） |
-| `.settings-modal` | 設定モーダル用の `.modal` 修飾クラス。上下 margin と box-shadow を強めて「浮いている」見た目にする |
-| `.modal-title` | 設定モーダルの見出しテキスト（15px, 700, margin-bottom:20px） |
-| `.modal-close` | モーダル閉じる×ボタン（26×26px 丸ボタン、hover で red 背景） |
+| `.settings-modal` | 設定モーダル用の `.modal` 修飾クラス。上下 margin と box-shadow を強めて「浮いている」見た目にする。閉じるボタンは持たず、オーバーレイタップで閉じる |
+| `.modal-title-row` | 設定モーダル見出しと `.modal-title-actions`（QR・テーマ・文字サイズアイコン）を横並びにする flex コンテナ |
+| `.modal-title` | 設定モーダルの見出しテキスト（15px, 700） |
+| `.modal-title-actions` | QR・テーマ・文字サイズの3アイコンをまとめる flex コンテナ。すべて `.icon-btn` を使い QRボタンと同じさりげない見た目に揃える |
+| `.modal-close` | モーダル閉じる×ボタン（26×26px 丸ボタン、hover で red 背景）。フラッシュカードモーダルのみで使用（設定モーダルは廃止） |
 | `.progress-bar` / `.progress-fill` | 進捗バー（accent→accent2 グラデーション） |
 | `.flash-word` | フラッシュカードのメイン単語（最大 64px、JS でサイズ動的変更） |
 | `.flash-meaning-wrap` | 答えのカバー付きコンテナ（タップでトグル） |
@@ -298,13 +323,17 @@ element.classList.remove('open');
 - `selectBook(book, silent=false)`: currentBook 更新後に必ず `clampRangeInputs()` を呼ぶ。`silent=true` のときは `saveSettings()` を呼ばない（`loadSettings()` からの呼び出し時に使用）。
 - 冊子ごとの範囲上限は `BOOK_MAX` で一元管理。新しい冊子を追加するときはこのオブジェクトにエントリを追加するだけでよい。
 - `generateTable()` は成功時のみ `closeSettings()` を呼ぶ（該当語がない場合はトーストを出してモーダルを開いたままにし、その場で範囲を直せるようにする）。
+- `theme` のデフォルトは `'dark'`、`fontScale` のデフォルトは `3`。どちらも localStorage 未設定時のフォールバック値。
+- QR・テーマ・文字サイズのアイコンは設定モーダルの見出し行にあるため、`openQR()` は必ず `closeSettings()` を先に呼ぶ（`.modal-overlay` の z-index は共通の1000なので、閉じないと設定モーダルの背景が QR モーダルの上に重なり閉じるボタンが押せなくなる）。
+- 設定モーダルに閉じるボタン（×）は置かない。`#settingsOverlay` に `onclick="closeSettings()"`、モーダル本体（`.settings-modal`）に `onclick="event.stopPropagation()"` を付け、オーバーレイ部分をタップしたときだけ閉じるようにする（QRオーバーレイと同じパターン）。
 
 ### テーブル描画
 
-- `renderTable()` は `tableSwapped` の値を読み取り、`swapped=true` なら左=単語(Outfit/白)・右=意味(Noto/赤、maskable)。
-- 右セルの色は `rightStyle.replace('color:#e8eaf6', 'color:#e05555')` で強制的に赤にする。
-- マスク要素は `.mask-el` クラスの `<span>` で、`style="display:none"` / `display:block` を JS で切り替える（`visible` クラスは使わない）。
+- `renderTable()` は `tableSwapped` の値を読み取り、`swapped=true` なら左=単語(Outfit)・右=意味(Noto、maskable)。
+- セルの色は `color:var(--text)` / `color:var(--red)` の inline style として埋め込む（ハードコード16進色は禁止。テーマ切り替え時に var() の再評価だけで追従させるため）。右セルは `rightStyle.replace('color:var(--text)', 'color:var(--red)')` で強制的に赤にする。
+- マスク要素は `.mask-el` クラスの `<span>` で、`style="display:none"` / `display:block` を JS で切り替える（`visible` クラスは使わない）。背景色も `background:var(--red-dark)`。
 - 音声ボタン（`.td-speak` 列）は常に4番目の列として追加し、マスクとは独立させる。
+- 文字サイズは `#tableArea` 要素に `style.zoom` を設定して実現する（テーブル内容を再描画せずに済む）。`renderTable()`/`restoreTable()` は `#tableArea` の子要素を差し替えるだけなので、`zoom` は保持される。
 
 ### CSS 追加時のルール
 
