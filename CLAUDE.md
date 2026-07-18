@@ -120,14 +120,13 @@ DOMContentLoaded
 設定アイコンタップ
   → openSettings()     設定モーダル（範囲・冊子指定フォーム、QRシェア、テーマ・文字サイズ）を開く
 
-設定モーダル内のQRボタンタップ
+設定モーダル外（オーバーレイ）タップ
+  → closeSettings()    settingsOverlay に onclick、モーダル本体には event.stopPropagation() で内側クリックは無視
+
+設定モーダル見出し行のQR/テーマ/文字サイズアイコンタップ
   → openQR()           先に closeSettings()（z-indexで設定モーダルの下に隠れるのを防ぐ）→ QRオーバーレイを開く
-
-ダーク/ライト切り替えボタンタップ
   → toggleTheme()      <html> の data-theme 属性を切り替え → CSS変数がカスケードし再描画不要で全体に反映
-
-文字サイズボタンタップ
-  → setFontScale(level) → #tableArea の style.zoom を更新（テーブルは再描画不要）、フラッシュカードは次回描画時に反映
+  → cycleFontScale()   fontScale を 1→5→1 とループさせ setFontScale() を呼ぶ、トーストで現在値を通知
 
 ユーザー操作（「✦ 生成」ボタン）
   → generateTable()
@@ -165,12 +164,13 @@ DOMContentLoaded
 | `selectBook(book, silent)` | currentBook 更新・ボタン active クラス切り替え・`clampRangeInputs()`（silent=true は saveSettings をスキップ） |
 | `clampRangeInputs()` | 開始・終了番号を `BOOK_MAX[currentBook]` の範囲に収める |
 | `step(id, delta)` | range input を±delta して `BOOK_MAX[currentBook]` を上限にクランプ、saveSettings |
-| `openSettings()` / `closeSettings()` | 設定モーダル（範囲・冊子指定フォーム）の `.open` クラス付け外し |
+| `openSettings()` / `closeSettings()` | 設定モーダル（範囲・冊子指定フォーム）の `.open` クラス付け外し。閉じるボタンはなく、オーバーレイタップ（`closeSettings()`）と生成/リセット成功時のみで閉じる |
 | `resetAll()` | 全状態を初期値（book=1900, from=1, to=100, ordered, hide, tableSwapped=true）に戻し、設定モーダルを閉じる |
 | `speak(word)` | Web Speech API で英語発音 |
 | `speakCurrentFlash()` | フラッシュカード現在単語を speak |
 | `openQR()` / `closeQR()` | QR オーバーレイの `.open` クラス付け外し（`openQR()` は先に `closeSettings()` を呼ぶ） |
 | `toggleTheme()` / `applyTheme()` / `loadTheme()` | ダーク/ライト切り替え。`<html data-theme>` を更新しテーマアイコンを差し替え |
+| `cycleFontScale()` | 文字サイズアイコンのクリックハンドラ。`fontScale` を1→5→1でループさせ `setFontScale()` を呼ぶ |
 | `setFontScale(level)` / `applyFontScale()` / `loadFontScale()` | 文字サイズ5段階（`FONT_SCALE_MAP`）の適用・復元 |
 | `shuffleArray(arr)` | Fisher-Yates in-place シャッフル |
 | `escHtml(str)` | `&`/`<`/`>` のエスケープ（innerHTML 挿入前に必ず使用） |
@@ -238,10 +238,6 @@ DOMContentLoaded
 | `.step-btn` | 数値入力の±ボタン |
 | `.generate-btn` | 生成ボタン（accent グラデーション背景） |
 | `.reset-btn` | リセットボタン（surface2 背景、border あり） |
-| `.prefs-group` | テーマ・文字サイズボタンをまとめる flex コンテナ（`.generate-btn-wrap` 内、リセット/生成ボタンの左） |
-| `.theme-btn` | ダーク/ライト切替ボタン（24×24px、月/太陽アイコンをJSで差し替え） |
-| `.fontsize-group` / `.fontsize-btn` / `.fontsize-btn.active` | 文字サイズ5段階ボタン（各18×24px）。`.active` で選択中の段階を accent 背景に |
-| `.action-group` | リセット・生成ボタンをまとめる flex コンテナ |
 | `.word-table` | 語彙テーブル（border-collapse:separate, border-spacing:0 4px） |
 | `.word-row` / `.word-row:hover` | テーブル行（hover で surface2） |
 | `.td-word` | 英単語セル（width:50%、Outfit フォント、`clamp(12px,4vw,18px)`） |
@@ -254,10 +250,11 @@ DOMContentLoaded
 | `.flash-btn` | フラッシュチェック起動ボタン |
 | `.modal-overlay` / `.modal-overlay.open` | モーダル背景（設定・フラッシュカード共通）。`.open` で `opacity:1; pointer-events:all` |
 | `.modal` | モーダル本体（max-width:380px、`transform:translateY(20px→0)` でアニメーション） |
-| `.settings-modal` | 設定モーダル用の `.modal` 修飾クラス。上下 margin と box-shadow を強めて「浮いている」見た目にする |
-| `.modal-title-row` | 設定モーダル見出しとQRボタンを横並びにする flex コンテナ（`.modal-close` と衝突しないよう padding-right を確保） |
+| `.settings-modal` | 設定モーダル用の `.modal` 修飾クラス。上下 margin と box-shadow を強めて「浮いている」見た目にする。閉じるボタンは持たず、オーバーレイタップで閉じる |
+| `.modal-title-row` | 設定モーダル見出しと `.modal-title-actions`（QR・テーマ・文字サイズアイコン）を横並びにする flex コンテナ |
 | `.modal-title` | 設定モーダルの見出しテキスト（15px, 700） |
-| `.modal-close` | モーダル閉じる×ボタン（26×26px 丸ボタン、hover で red 背景） |
+| `.modal-title-actions` | QR・テーマ・文字サイズの3アイコンをまとめる flex コンテナ。すべて `.icon-btn` を使い QRボタンと同じさりげない見た目に揃える |
+| `.modal-close` | モーダル閉じる×ボタン（26×26px 丸ボタン、hover で red 背景）。フラッシュカードモーダルのみで使用（設定モーダルは廃止） |
 | `.progress-bar` / `.progress-fill` | 進捗バー（accent→accent2 グラデーション） |
 | `.flash-word` | フラッシュカードのメイン単語（最大 64px、JS でサイズ動的変更） |
 | `.flash-meaning-wrap` | 答えのカバー付きコンテナ（タップでトグル） |
@@ -327,7 +324,8 @@ element.classList.remove('open');
 - 冊子ごとの範囲上限は `BOOK_MAX` で一元管理。新しい冊子を追加するときはこのオブジェクトにエントリを追加するだけでよい。
 - `generateTable()` は成功時のみ `closeSettings()` を呼ぶ（該当語がない場合はトーストを出してモーダルを開いたままにし、その場で範囲を直せるようにする）。
 - `theme` のデフォルトは `'dark'`、`fontScale` のデフォルトは `3`。どちらも localStorage 未設定時のフォールバック値。
-- QRボタンは設定モーダル内にあるため、`openQR()` は必ず `closeSettings()` を先に呼ぶ（`.modal-overlay` の z-index は共通の1000なので、閉じないと設定モーダルの背景が QR モーダルの上に重なり閉じるボタンが押せなくなる）。
+- QR・テーマ・文字サイズのアイコンは設定モーダルの見出し行にあるため、`openQR()` は必ず `closeSettings()` を先に呼ぶ（`.modal-overlay` の z-index は共通の1000なので、閉じないと設定モーダルの背景が QR モーダルの上に重なり閉じるボタンが押せなくなる）。
+- 設定モーダルに閉じるボタン（×）は置かない。`#settingsOverlay` に `onclick="closeSettings()"`、モーダル本体（`.settings-modal`）に `onclick="event.stopPropagation()"` を付け、オーバーレイ部分をタップしたときだけ閉じるようにする（QRオーバーレイと同じパターン）。
 
 ### テーブル描画
 
