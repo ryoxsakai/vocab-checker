@@ -29,6 +29,8 @@
     --green: #4caf84;
     --header-grad-1: #1a1d27;
     --header-grad-2: #131620;
+    --memo-bg: #3d3564;
+    --memo-text: #c9baff;
     --radius: 12px;
     --radius-sm: 8px;
   }
@@ -49,6 +51,8 @@
     --green: #2f9d6f;
     --header-grad-1: #ffffff;
     --header-grad-2: #eceef6;
+    --memo-bg: #ece4ff;
+    --memo-text: #6a4fc4;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -747,6 +751,203 @@
     font-size: 13px;
   }
 
+  /* ── GRAMMAR MODE ── */
+  .grammar-lesson {
+    margin-bottom: 28px;
+    scroll-margin-top: 76px;
+  }
+  .grammar-lesson-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .grammar-lesson-num {
+    color: var(--accent2);
+    margin-right: 6px;
+  }
+  .grammar-section { margin-bottom: 16px; }
+  .grammar-section-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+    padding-left: 8px;
+    border-left: 3px solid var(--accent);
+  }
+  .grammar-example {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .grammar-example-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .grammar-letter {
+    flex-shrink: 0;
+    width: 21px;
+    height: 21px;
+    border: 1.5px solid var(--accent);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent2);
+    font-family: 'Outfit', sans-serif;
+  }
+  .grammar-sentence {
+    flex: 1;
+    min-width: 160px;
+    font-family: 'Outfit', monospace;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .grammar-tag {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--accent2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .grammar-rewrite {
+    font-family: 'Outfit', monospace;
+    color: var(--text-sub);
+    font-size: 13px;
+    margin: 4px 0 0 29px;
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .grammar-translation {
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--red);
+    font-size: 13px;
+    margin: 6px 0 0 29px;
+    line-height: 1.6;
+  }
+  .grammar-gloss {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+  .grammar-note {
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text-sub);
+    font-size: 12px;
+    margin: 6px 0 0 29px;
+    line-height: 1.6;
+  }
+  .grammar-note-arrow { color: var(--accent2); }
+
+  .grammar-memo {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+  }
+  .grammar-memo-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  /* 覚える語法グループの見出しはパステルカラーのバッジでくくる */
+  .memo-badge {
+    background: var(--memo-bg);
+    color: var(--memo-text);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .memo-header-suffix {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'Outfit', monospace;
+  }
+  .grammar-memo-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 5px 16px;
+  }
+  @media (min-width: 560px) {
+    .grammar-memo-list { grid-template-columns: 1fr 1fr; }
+  }
+  .grammar-memo-list li {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text-sub);
+    padding-left: 14px;
+    position: relative;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .grammar-memo-list li::before {
+    content: '○';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--accent2);
+    font-size: 10px;
+  }
+
+  /* ── TOC ── */
+  .toc-list {
+    overflow-y: auto;
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .toc-item:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .toc-num {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
   /* scrollbar */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -760,8 +961,14 @@
   <div class="header-top">
     <div class="header-title">📚 Target Vocab Checker</div>
     <div class="header-icons">
-      <button class="icon-btn" onclick="openSettings()" title="単語範囲を設定">
+      <button class="icon-btn" id="vocabSettingsBtn" onclick="openSettings()" title="単語範囲を設定">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+      </button>
+      <button class="icon-btn" id="grammarTocBtn" onclick="openToc()" title="目次" style="display:none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
+      </button>
+      <button class="icon-btn" id="modeToggleBtn" onclick="toggleAppMode()" title="文法モードに切り替え">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6.5C10.3 5.1 8 4.3 5.5 4.3c-.8 0-1.5.7-1.5 1.5v11c0 .8.7 1.5 1.5 1.5 2.5 0 4.8.8 6.5 2.2 1.7-1.4 4-2.2 6.5-2.2.8 0 1.5-.7 1.5-1.5v-11c0-.8-.7-1.5-1.5-1.5-2.5 0-4.8.8-6.5 2.2zM11 17.5c-1.6-1-3.5-1.6-5.5-1.7v-9c1.9.1 3.7.7 5.5 1.8v8.9zm2 0v-8.9c1.8-1.1 3.6-1.7 5.5-1.8v9c-2 .1-3.9.7-5.5 1.7z"/></svg>
       </button>
     </div>
   </div>
@@ -836,13 +1043,29 @@
 
 <!-- MAIN -->
 <main>
-  <div id="tableArea">
-    <div class="empty-state">
-      <div class="big">📖</div>
-      <p>右上の⚙アイコンから範囲を設定して<br>「生成」を押してください</p>
+  <div id="vocabView">
+    <div id="tableArea">
+      <div class="empty-state">
+        <div class="big">📖</div>
+        <p>右上の⚙アイコンから範囲を設定して<br>「生成」を押してください</p>
+      </div>
     </div>
   </div>
+  <div id="grammarView" style="display:none">
+    <div class="loading-note" id="grammarLoading">読み込み中...</div>
+    <div id="grammarContent"></div>
+  </div>
 </main>
+
+<!-- TOC MODAL -->
+<div class="modal-overlay" id="tocOverlay" onclick="closeToc()">
+  <div class="modal settings-modal" onclick="event.stopPropagation()">
+    <div class="modal-title-row">
+      <div class="modal-title">目次</div>
+    </div>
+    <div class="toc-list" id="tocList"></div>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay">
@@ -891,6 +1114,9 @@ let maskStates = {};   // key: `${book}-${no}` → true=masked
 let tableSwapped = true; // false=左意味・右スペル、true=左スペル・右意味（デフォルト）
 let theme = 'dark';     // 'dark' | 'light'
 let fontScale = 3;      // 1〜5の5段階（3が標準サイズ）
+let appMode = 'vocab';  // 'vocab' | 'grammar'
+let grammarData = null; // grammar.json 読み込み後にセット
+let grammarLoadPromise = null;
 
 // 冊子ごとの最大掲載番号（範囲指定の上限に使う）
 const BOOK_MAX = { '1400': 1400, '1900': 1900, '1000': 1000 };
@@ -903,6 +1129,7 @@ const LS_MASKS      = 'vocab_masks';
 const LS_TABLE      = 'vocab_table';
 const LS_THEME      = 'vocab_theme';
 const LS_FONT_SCALE = 'vocab_font_scale';
+const LS_APP_MODE   = 'vocab_app_mode';
 
 // ─── INIT ───
 window.addEventListener('DOMContentLoaded', async () => {
@@ -910,6 +1137,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   loadMasks();
   loadTheme();
   loadFontScale();
+  loadAppMode();
   await loadBook('1400');
   await loadBook('1900');
   await loadBook('1000');
@@ -1042,6 +1270,137 @@ function loadFontScale() {
     fontScale = FONT_SCALE_MAP[saved] ? saved : 3;
   } catch(e) { fontScale = 3; }
   applyFontScale();
+}
+
+// ─── APP MODE（単語⇔文法） ───
+const MODE_ICON_TO_GRAMMAR = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6.5C10.3 5.1 8 4.3 5.5 4.3c-.8 0-1.5.7-1.5 1.5v11c0 .8.7 1.5 1.5 1.5 2.5 0 4.8.8 6.5 2.2 1.7-1.4 4-2.2 6.5-2.2.8 0 1.5-.7 1.5-1.5v-11c0-.8-.7-1.5-1.5-1.5-2.5 0-4.8.8-6.5 2.2zM11 17.5c-1.6-1-3.5-1.6-5.5-1.7v-9c1.9.1 3.7.7 5.5 1.8v8.9zm2 0v-8.9c1.8-1.1 3.6-1.7 5.5-1.8v9c-2 .1-3.9.7-5.5 1.7z"/></svg>';
+const MODE_ICON_TO_VOCAB = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="7" width="14" height="13" rx="2" opacity="0.5"/><rect x="7" y="4" width="14" height="13" rx="2"/></svg>';
+
+function toggleAppMode() {
+  appMode = appMode === 'vocab' ? 'grammar' : 'vocab';
+  applyAppMode();
+  localStorage.setItem(LS_APP_MODE, appMode);
+  if (appMode === 'grammar') loadGrammarIfNeeded();
+}
+
+function applyAppMode() {
+  const isGrammar = appMode === 'grammar';
+  document.getElementById('vocabView').style.display = isGrammar ? 'none' : '';
+  document.getElementById('grammarView').style.display = isGrammar ? '' : 'none';
+  document.getElementById('vocabSettingsBtn').style.display = isGrammar ? 'none' : '';
+  document.getElementById('grammarTocBtn').style.display = isGrammar ? '' : 'none';
+  const btn = document.getElementById('modeToggleBtn');
+  btn.innerHTML = isGrammar ? MODE_ICON_TO_VOCAB : MODE_ICON_TO_GRAMMAR;
+  btn.title = isGrammar ? '単語モードに切り替え' : '文法モードに切り替え';
+}
+
+function loadAppMode() {
+  try {
+    appMode = localStorage.getItem(LS_APP_MODE) === 'grammar' ? 'grammar' : 'vocab';
+  } catch(e) { appMode = 'vocab'; }
+  applyAppMode();
+  if (appMode === 'grammar') loadGrammarIfNeeded();
+}
+
+// ─── 文法モード：データ読み込み・描画 ───
+function loadGrammarIfNeeded() {
+  if (grammarData) return Promise.resolve();
+  if (grammarLoadPromise) return grammarLoadPromise;
+  grammarLoadPromise = (async () => {
+    try {
+      // キャッシュバスターで常に最新の文法データを取得
+      const resp = await fetch(`grammar.json?_=${Date.now()}`);
+      if (!resp.ok) throw new Error('not found');
+      grammarData = await resp.json();
+      renderGrammar();
+      document.getElementById('grammarLoading').style.display = 'none';
+    } catch(e) {
+      document.getElementById('grammarLoading').textContent = '文法データの読み込みに失敗しました';
+    }
+  })();
+  return grammarLoadPromise;
+}
+
+function renderGrammar() {
+  const html = [];
+  grammarData.forEach(lesson => {
+    html.push(`<section class="grammar-lesson" id="lesson-${lesson.number}">`);
+    html.push(`<div class="grammar-lesson-title"><span class="grammar-lesson-num">第${lesson.number}講</span>${escHtml(lesson.title)}</div>`);
+    lesson.sections.forEach(sec => {
+      html.push('<div class="grammar-section">');
+      if (sec.title) {
+        html.push(`<div class="grammar-section-title">${escHtml(sec.number)}. ${escHtml(sec.title)}</div>`);
+      }
+      sec.content.forEach(item => {
+        html.push(item.type === 'example' ? renderGrammarExample(item) : renderGrammarMemo(item));
+      });
+      html.push('</div>');
+    });
+    html.push('</section>');
+  });
+  document.getElementById('grammarContent').innerHTML = html.join('');
+}
+
+function renderGrammarExample(ex) {
+  // □ の通しアルファベット・〈タグ〉・▶ の注釈をそのまま再現する
+  let h = '<div class="grammar-example"><div class="grammar-example-row">';
+  h += `<span class="grammar-letter">${escHtml(ex.letter)}</span>`;
+  h += `<span class="grammar-sentence">${escHtml(ex.sentence)}</span>`;
+  if (ex.tag) h += `<span class="grammar-tag">〈${escHtml(ex.tag)}〉</span>`;
+  h += '</div>';
+  ex.rewrites.forEach(rw => {
+    h += `<div class="grammar-rewrite"><span>${escHtml(rw.sentence)}</span>`;
+    if (rw.tag) h += `<span class="grammar-tag">〈${escHtml(rw.tag)}〉</span>`;
+    h += '</div>';
+  });
+  if (ex.translation.length) {
+    h += `<div class="grammar-translation">${ex.translation.map(escHtml).join('<br>')}`;
+    if (ex.gloss.length) h += ` <span class="grammar-gloss">(${ex.gloss.map(escHtml).join('、')})</span>`;
+    h += '</div>';
+  }
+  ex.notes.forEach(n => {
+    h += `<div class="grammar-note"><span class="grammar-note-arrow">▶</span> ${escHtml(n)}</div>`;
+  });
+  h += '</div>';
+  return h;
+}
+
+function renderGrammarMemo(memo) {
+  // 覚えるべき語法グループは〈見出し〉をパステルカラーのバッジにする
+  let h = '<div class="grammar-memo">';
+  if (memo.header || memo.headerSuffix) {
+    h += '<div class="grammar-memo-header">';
+    if (memo.header) h += `<span class="memo-badge">〈${escHtml(memo.header)}〉</span>`;
+    if (memo.headerSuffix) h += `<span class="memo-header-suffix">${escHtml(memo.headerSuffix)}</span>`;
+    h += '</div>';
+  }
+  h += '<ul class="grammar-memo-list">';
+  memo.items.forEach(it => { h += `<li>${escHtml(it)}</li>`; });
+  h += '</ul></div>';
+  return h;
+}
+
+// ─── 文法モード：目次 ───
+async function openToc() {
+  await loadGrammarIfNeeded();
+  populateToc();
+  document.getElementById('tocOverlay').classList.add('open');
+}
+function closeToc() {
+  document.getElementById('tocOverlay').classList.remove('open');
+}
+function populateToc() {
+  if (!grammarData) return;
+  const list = document.getElementById('tocList');
+  if (list.children.length) return; // 初回のみ生成
+  list.innerHTML = grammarData.map(l =>
+    `<button class="toc-item" onclick="scrollToLesson(${l.number})"><span class="toc-num">${l.number}</span>${escHtml(l.title)}</button>`
+  ).join('');
+}
+function scrollToLesson(n) {
+  closeToc();
+  const el = document.getElementById('lesson-' + n);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ─── TABLE SAVE/RESTORE ───

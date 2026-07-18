@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Target Vocabulary Checker — a client-side single-page application for Japanese English learners to study vocabulary from the Target 1400/1900 series and the Target 1000 idiom list. No backend, no build step, no package manager.
+Target Vocabulary Checker — a client-side single-page application for Japanese English learners to study vocabulary from the Target 1400/1900 series and the Target 1000 idiom list, plus a grammar reference mode (「超特急英文法 攻略ポイント集」全23講) for browsing example sentences and memorization lists. No backend, no build step, no package manager.
 
 ## Running the App
 
@@ -13,7 +13,7 @@ python3 -m http.server 8080
 # then visit http://localhost:8080
 ```
 
-The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) must be in the same directory as `index.html`. If missing, the app falls back to inline sample data automatically.
+The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) and `grammar.json` must be in the same directory as `index.html`. If the CSVs are missing, the app falls back to inline sample data automatically; if `grammar.json` fails to load, 文法モード shows an error message in place of the content.
 
 ---
 
@@ -76,6 +76,8 @@ The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) must b
 | `tableSwapped` | `boolean` | `true`=左:単語・右:意味（デフォルト）、`false`=左:意味・右:単語 |
 | `theme` | `'dark' \| 'light'` | 現在のカラーテーマ。`document.documentElement`（`<html>`）の `data-theme` 属性として反映 |
 | `fontScale` | `1〜5` | 文字サイズ段階（3が標準）。`FONT_SCALE_MAP` で倍率に変換し `#tableArea` の `style.zoom` とフラッシュカードのフォントサイズに適用 |
+| `appMode` | `'vocab' \| 'grammar'` | 現在表示中のモード。`#vocabView`/`#grammarView` の表示切り替えとヘッダーアイコンの出し分けに使う |
+| `grammarData` | `Lesson[] \| null` | `grammar.json` 読み込み後の文法データ（初回に文法モードへ切り替えたときに遅延フェッチ） |
 
 #### 冊子ごとの最大番号
 
@@ -105,6 +107,30 @@ no,word,meaning
 `meaning` はカンマを含む場合があるため、パーサーは `parts.slice(2).join(',')` で結合する。パーサーはクォート（`"..."`）を解釈しないため、**CSV 生成時にカンマを含む `meaning` をダブルクォートで囲んではいけない**（そのまま表示に混入する）。カンマはクォートなしでそのまま書く。
 
 `target1000.csv` は Target 1000（熟語）のデータで、`no` は 1〜1000。
+
+#### grammar.json フォーマット
+
+語彙データは CSV だが、文法モードのコンテンツは講→節→例文/暗記ブロックの階層構造を持つため、**この 1 ファイルに限り JSON を使う**（「データファイルはCSVのまま」の例外）。`fetch()` で読み込み、`JSON.parse` 相当の `resp.json()` でそのまま使う。
+
+```ts
+Lesson[] = [{
+  number: number,        // 第N講
+  title: string,
+  sections: [{
+    number: string, title: string,
+    content: [
+      // type: 'example' — □アルファベット付きの例文
+      { type: 'example', letter: string, sentence: string, tag: string,
+        rewrites: [{ sentence: string, tag: string }],  // ＝/→ で始まる書き換え文
+        translation: string[], gloss: string[], notes: string[] },
+      // type: 'memo' — 〈見出し〉○項目 の暗記リスト
+      { type: 'memo', header: string, headerSuffix: string, items: string[] },
+    ]
+  }]
+}]
+```
+
+`content` は元 PDF に登場する順序どおり（例文と暗記ブロックが同一節内で混在することがあるため、`examples`/`blocks` を別配列にせず単一の順序付き配列にしている）。このファイルは `parse_grammar.py` で PDF のテキスト抽出結果（`pdftotext -layout` の出力）から生成した。新しい講を追加・修正する場合は `grammar.json` を直接編集するか、PDF を更新して `parse_grammar.py` を再実行する。
 
 ### データフロー
 
@@ -143,6 +169,15 @@ DOMContentLoaded
   → openFlash()        currentWords を flashWords にコピー
   → renderFlashCard()  flashIndex に対応するカードを描画
   → flashNext() / flashPrev()  flashIndex を±1して renderFlashCard()
+
+モード切替アイコンタップ（ヘッダー）
+  → toggleAppMode()    appMode を 'vocab'⇔'grammar' でトグル
+      → applyAppMode()     #vocabView/#grammarView の表示切り替え、ヘッダーアイコンの出し分け
+      → 初回 'grammar' 切替時のみ loadGrammarIfNeeded() で grammar.json を遅延フェッチ
+
+文法モード目次アイコンタップ
+  → openToc()          grammarData 未読み込みなら先に loadGrammarIfNeeded() を await → populateToc() → モーダルを開く
+  → scrollToLesson(n)  目次項目タップで該当 #lesson-N へ scrollIntoView、モーダルを閉じる
 ```
 
 ### 主要関数一覧
@@ -175,6 +210,11 @@ DOMContentLoaded
 | `shuffleArray(arr)` | Fisher-Yates in-place シャッフル |
 | `escHtml(str)` | `&`/`<`/`>` のエスケープ（innerHTML 挿入前に必ず使用） |
 | `showToast(msg)` | 2秒間トースト表示（タイマー重複防止あり） |
+| `toggleAppMode()` / `applyAppMode()` / `loadAppMode()` | 単語⇔文法モードの切り替え・復元。`applyAppMode()` がビュー表示とヘッダーアイコンの出し分けを行う |
+| `loadGrammarIfNeeded()` | `grammar.json` を初回のみキャッシュバスター付きで fetch（`grammarLoadPromise` で多重フェッチを防止）→ `renderGrammar()` |
+| `renderGrammar()` / `renderGrammarExample(ex)` / `renderGrammarMemo(memo)` | `grammarData` から文法モードの HTML を構築（□レター・〈タグ〉・▶注釈・パステルバッジ付き暗記リストを描画） |
+| `openToc()` / `closeToc()` / `populateToc()` | 目次モーダルの `.open` クラス付け外しと一覧生成（初回のみ） |
+| `scrollToLesson(n)` | 目次から該当講へ `scrollIntoView`、モーダルを閉じる |
 
 ---
 
@@ -209,6 +249,8 @@ DOMContentLoaded
   --green:     #4caf84;   /* トースト背景・成功色 */
   --header-grad-1: #1a1d27; /* ヘッダーグラデーション開始色 */
   --header-grad-2: #131620; /* ヘッダーグラデーション終了色 */
+  --memo-bg:   #3d3564;   /* 文法モード：暗記グループ見出しバッジの背景（パステル） */
+  --memo-text: #c9baff;   /* 文法モード：暗記グループ見出しバッジの文字色 */
   --radius:    12px;      /* 標準角丸 */
   --radius-sm:  8px;      /* 小さい角丸（行セル・小ボタン） */
 }
@@ -266,7 +308,16 @@ DOMContentLoaded
 | `.qr-card` | QR モーダル本体（surface 背景、flex 縦並び） |
 | `.toast` / `.toast.show` | トースト通知（fixed、bottom:24px、`translateY(80px→0)` アニメーション、z-index:2000） |
 | `.empty-state` | テーブル空時の表示（中央寄せ、絵文字＋テキスト） |
-| `.loading-note` | CSV 読み込み中テキスト |
+| `.loading-note` | CSV/grammar.json 読み込み中テキスト |
+| `.grammar-lesson` | 文法モードの講セクション。`id="lesson-N"` を持ち目次からの `scrollIntoView` 先になる（`scroll-margin-top` で sticky ヘッダー分オフセット） |
+| `.grammar-section-title` | 節見出し（「1. 第1文型」等）。左ボーダーで強調 |
+| `.grammar-example` / `.grammar-letter` / `.grammar-sentence` / `.grammar-tag` | 例文カード。□の通しアルファベットをバッジ化した `.grammar-letter`、〈パターン名〉を表す `.grammar-tag` |
+| `.grammar-rewrite` | ＝/→ で始まる書き換え文（`rewrites`）の表示行 |
+| `.grammar-translation` / `.grammar-gloss` | 日本語訳と、"it = the dish" のような補足対応関係 |
+| `.grammar-note` / `.grammar-note-arrow` | ▶ で始まる注釈。矢印のみ accent 色で強調 |
+| `.grammar-memo` / `.grammar-memo-header` / `.memo-badge` / `.memo-header-suffix` | 暗記リストのカード。`.memo-badge` が〈見出し〉をパステルカラー（`--memo-bg`/`--memo-text`）のバッジにする |
+| `.grammar-memo-list` | ○項目の箇条書き（`::before` で ○ を描画、`list-style:none`）。560px 以上で2カラム |
+| `.toc-list` / `.toc-item` / `.toc-num` | 目次モーダルの一覧・各講ボタン・講番号バッジ |
 
 ### モーダルパターン
 
@@ -352,6 +403,8 @@ index.html            # アプリ本体（HTML + CSS + JS、すべてインラ�
 target1400.csv        # Target 1400 語彙データ（no,word,meaning）
 target1900.csv        # Target 1900 語彙データ（no,word,meaning）
 target1000.csv        # Target 1000 熟語データ（no,word,meaning）
+grammar.json           # 文法モードのデータ（全23講、講→節→例文/暗記ブロックの階層構造）
+parse_grammar.py       # grammar.json 生成スクリプト（pdftotext -layout の出力テキストから変換）
 apple-touch-icon.png  # iOS ホーム画面アイコン（180×180 px RGBA PNG）
 qr.png                # QR コード画像（サイトURL→シェアモーダルで表示）
 resize_icon.py        # アイコン作成用スクリプト（IMG_5804.png → apple-touch-icon.png）
@@ -362,7 +415,7 @@ CLAUDE.md             # 本ファイル
 ### 方針
 
 - **新ファイルを作らない**: 機能追加はすべて `index.html` へのインライン追加で行う。JS ファイル・CSS ファイルの分離は行わない。
-- **データファイルはCSVのまま**: JSON や DB への移行は行わない。
+- **データファイルはCSVのまま**: JSON や DB への移行は行わない。ただし `grammar.json` は例外（講→節→例文/暗記ブロックという階層構造を持ち、CSV の単純な表形式では表現できないため）。
 - **アイコン変更**: `apple-touch-icon.png` の更新は Python スクリプト（`resize_icon.py` or `gen_icon.py`）で行い、PIL/Pillow 等の外部ライブラリは使わない。
 - **画像ファイル**: `qr.png` と `apple-touch-icon.png` のみ。スプライトシート・SVGスプライト等は使わない（SVG はインライン HTML に直接記述）。
 - **`index.html` 内の構造**: `<style>` → `<body>` → `<script>` の順。スクリプトは `<body>` 末尾に2ブロック（アプリロジック + iOS ズーム無効化）。
