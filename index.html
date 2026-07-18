@@ -45,7 +45,7 @@
   .header {
     background: linear-gradient(135deg, #1a1d27 0%, #131620 100%);
     border-bottom: 1px solid var(--border);
-    padding: 16px 20px 0;
+    padding: 16px 20px;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -59,7 +59,14 @@
     margin-bottom: 12px;
   }
 
-  .qr-btn {
+  .header-icons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
     background: none;
     border: none;
     cursor: pointer;
@@ -72,8 +79,8 @@
     align-items: center;
     flex-shrink: 0;
   }
-  .qr-btn:hover { opacity: 1; }
-  .qr-btn:active { transform: scale(0.9); }
+  .icon-btn:hover { opacity: 1; }
+  .icon-btn:active { transform: scale(0.9); }
 
   .qr-overlay {
     position: fixed;
@@ -132,45 +139,12 @@
   }
   .qr-close-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
 
-  .collapse-bar {
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: center;
-    padding: 4px 0;
-    margin-top: 2px;
-  }
-  .collapse-btn {
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-size: 11px;
-    padding: 2px 16px;
-    cursor: pointer;
-    transition: color 0.2s;
-    line-height: 1;
-  }
-  .collapse-btn:active { color: var(--accent); }
-
-  .collapsible-body {
-    overflow: hidden;
-    transition: max-height 0.35s ease, opacity 0.3s ease;
-    max-height: 600px;
-    opacity: 1;
-  }
-  .collapsible-body.collapsed {
-    max-height: 0;
-    opacity: 0;
-  }
-
   .header-title {
     font-size: clamp(14px, 4vw, 20px);
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text);
-    margin-top: 6px;
-    margin-bottom: 16px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -185,17 +159,17 @@
 
   .book-btn {
     flex: 1;
-    padding: 10px;
+    padding: 10px 4px;
     border-radius: var(--radius-sm);
     border: 1.5px solid var(--border);
     background: var(--surface2);
     color: var(--text-sub);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
   }
   .book-btn.active {
     background: var(--accent);
@@ -528,6 +502,20 @@
   }
   .modal-overlay.open .modal { transform: translateY(0); }
 
+  /* 浮いて見えるよう余白と影を強めた設定モーダル */
+  .settings-modal {
+    margin: 18px 0 34px;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.65);
+  }
+
+  .modal-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: 0.02em;
+  }
+
   .modal-close {
     position: absolute;
     top: 16px;
@@ -735,71 +723,80 @@
 <div class="header">
   <div class="header-top">
     <div class="header-title">📚 Target Vocab Checker</div>
-    <button class="qr-btn" onclick="openQR()" title="QRコードでシェア">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM13 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 13h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM16 13h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-4-6h2v2h-2zm0 4h2v2h-2z"/></svg>
-    </button>
-  </div>
-
-  <div class="collapsible-body" id="collapsibleBody">
-  <!-- Book selector -->
-  <div class="book-selector">
-    <button class="book-btn" data-book="1400" onclick="selectBook('1400')">Target 1400</button>
-    <button class="book-btn active" data-book="1900" onclick="selectBook('1900')">Target 1900</button>
-  </div>
-
-  <!-- Range -->
-  <div class="controls">
-    <div class="control-group">
-      <label>開始番号</label>
-      <div class="range-row">
-        <button class="step-btn" onclick="step('rangeFrom', -100)">－</button>
-        <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeFrom" value="1" min="1" oninput="saveSettings()">
-        <button class="step-btn" onclick="step('rangeFrom', 100)">＋</button>
-      </div>
+    <div class="header-icons">
+      <button class="icon-btn" onclick="openSettings()" title="単語範囲を設定">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+      </button>
+      <button class="icon-btn" onclick="openQR()" title="QRコードでシェア">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3zm1 1v5h5V4zm1 1h3v3H5zM13 3h7v7h-7zm1 1v5h5V4zm1 1h3v3h-3zM3 13h7v7H3zm1 1v5h5v-5zm1 1h3v3H5zM16 13h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-4-6h2v2h-2zm0 4h2v2h-2z"/></svg>
+      </button>
     </div>
-    <div class="control-group">
-      <label>終了番号</label>
-      <div class="range-row">
-        <button class="step-btn" onclick="step('rangeTo', -100)">－</button>
-        <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeTo" value="100" min="1" oninput="saveSettings()">
-        <button class="step-btn" onclick="step('rangeTo', 100)">＋</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Options -->
-  <div class="controls-row2">
-    <div class="control-group">
-      <label>順序</label>
-      <select class="control-select" id="orderMode" onchange="saveSettings()">
-        <option value="ordered">掲載順</option>
-        <option value="random">ランダム</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label>表示</label>
-      <select class="control-select" id="maskMode" onchange="saveSettings()">
-        <option value="hide">隠す</option>
-        <option value="show">表示する</option>
-      </select>
-    </div>
-  </div>
-  <div class="generate-btn-wrap">
-    <button class="reset-btn" onclick="resetAll()">↺ リセット</button>
-    <button class="generate-btn" onclick="generateTable()">✦ 生成</button>
-  </div>
-  </div><!-- /collapsible-body -->
-  <div class="collapse-bar">
-    <button class="collapse-btn" id="collapseBtn" onclick="toggleCollapse()">▲</button>
   </div>
 </div><!-- /header -->
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsOverlay">
+  <div class="modal settings-modal">
+    <button class="modal-close" onclick="closeSettings()">✕</button>
+    <div class="modal-title">単語範囲を設定</div>
+
+    <!-- Book selector -->
+    <div class="book-selector">
+      <button class="book-btn" data-book="1400" onclick="selectBook('1400')">単語1400</button>
+      <button class="book-btn active" data-book="1900" onclick="selectBook('1900')">単語1900</button>
+      <button class="book-btn" data-book="1000" onclick="selectBook('1000')">熟語1000</button>
+    </div>
+
+    <!-- Range -->
+    <div class="controls">
+      <div class="control-group">
+        <label>開始番号</label>
+        <div class="range-row">
+          <button class="step-btn" onclick="step('rangeFrom', -100)">－</button>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeFrom" value="1" min="1" oninput="saveSettings()">
+          <button class="step-btn" onclick="step('rangeFrom', 100)">＋</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <label>終了番号</label>
+        <div class="range-row">
+          <button class="step-btn" onclick="step('rangeTo', -100)">－</button>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" class="range-input" id="rangeTo" value="100" min="1" oninput="saveSettings()">
+          <button class="step-btn" onclick="step('rangeTo', 100)">＋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="controls-row2">
+      <div class="control-group">
+        <label>順序</label>
+        <select class="control-select" id="orderMode" onchange="saveSettings()">
+          <option value="ordered">掲載順</option>
+          <option value="random">ランダム</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>表示</label>
+        <select class="control-select" id="maskMode" onchange="saveSettings()">
+          <option value="hide">隠す</option>
+          <option value="show">表示する</option>
+        </select>
+      </div>
+    </div>
+    <div class="generate-btn-wrap">
+      <button class="reset-btn" onclick="resetAll()">↺ リセット</button>
+      <button class="generate-btn" onclick="generateTable()">✦ 生成</button>
+    </div>
+  </div>
+</div>
 
 <!-- MAIN -->
 <main>
   <div id="tableArea">
     <div class="empty-state">
       <div class="big">📖</div>
-      <p>上のフォームで範囲を設定して<br>「表を生成する」を押してください</p>
+      <p>右上の⚙アイコンから範囲を設定して<br>「生成」を押してください</p>
     </div>
   </div>
 </main>
@@ -842,7 +839,7 @@
 
 <script>
 // ─── STATE ───
-let allWords = {};      // { '1400': [...], '1900': [...] }
+let allWords = {};      // { '1400': [...], '1900': [...], '1000': [...] }
 let currentBook = '1900';
 let currentWords = []; // words currently shown in table
 let flashIndex = 0;
@@ -850,19 +847,21 @@ let flashWords = [];
 let maskStates = {};   // key: `${book}-${no}` → true=masked
 let tableSwapped = true; // false=左意味・右スペル、true=左スペル・右意味（デフォルト）
 
+// 冊子ごとの最大掲載番号（範囲指定の上限に使う）
+const BOOK_MAX = { '1400': 1400, '1900': 1900, '1000': 1000 };
+
 // ─── LS KEYS ───
 const LS_SETTINGS = 'vocab_settings';
 const LS_MASKS    = 'vocab_masks';
 const LS_TABLE    = 'vocab_table';
-const LS_COLLAPSED = 'vocab_collapsed';
 
 // ─── INIT ───
 window.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
   loadMasks();
-  loadCollapsed();
   await loadBook('1400');
   await loadBook('1900');
+  await loadBook('1000');
   restoreTable(); // CSVロード後に表を復元
 });
 
@@ -896,11 +895,16 @@ function generateSampleData(book) {
     [4,'affect','～に影響する'],[5,'allow','～を許可する'],[6,'appear','現れる；～のように見える'],
     [7,'apply','応用する；申し込む'],[8,'argue','主張する；議論する'],[9,'assume','～を仮定する'],
     [10,'avoid','～を避ける']
-  ] : [
+  ] : book === '1900' ? [
     [1,'abolish','～を廃止する'],[2,'abstain','控える；棄権する'],[3,'absurd','ばかげた；不条理な'],
     [4,'accelerate','加速する；～を加速させる'],[5,'accessible','近づきやすい；利用しやすい'],
     [6,'acclaim','称賛する'],[7,'accommodate','～を収容する'],[8,'accomplish','～を達成する'],
     [9,'accountable','責任がある'],[10,'acknowledge','～を認める']
+  ] : [
+    [1,'a piece of ～','１つの～'],[2,'a couple of ～','２つの～'],[3,'a number of ～','いくつもの～'],
+    [4,'plenty of ～','たくさんの～'],[5,'at home','在宅して'],[6,'in advance','あらかじめ'],
+    [7,'in charge of ～','～を担当して'],[8,'on purpose','わざと'],[9,'so far','今のところ'],
+    [10,'up to ～','～次第で']
   ];
   return base.map(([no,word,meaning]) => ({no,word,meaning}));
 }
@@ -925,6 +929,7 @@ function loadSettings() {
     if (s.to)   document.getElementById('rangeTo').value   = s.to;
     if (s.order) document.getElementById('orderMode').value = s.order;
     if (s.mask)  document.getElementById('maskMode').value  = s.mask;
+    clampRangeInputs();
   } catch(e) {}
 }
 
@@ -967,14 +972,25 @@ function selectBook(book, silent = false) {
   document.querySelectorAll('.book-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.book === book);
   });
+  clampRangeInputs();
   if (!silent) saveSettings();
+}
+
+// 選択中の冊子の最大番号に開始・終了番号を収める
+function clampRangeInputs() {
+  const max = BOOK_MAX[currentBook] || 9999;
+  const fromEl = document.getElementById('rangeFrom');
+  const toEl   = document.getElementById('rangeTo');
+  fromEl.value = Math.min(Math.max(parseInt(fromEl.value) || 1, 1), max);
+  toEl.value   = Math.min(Math.max(parseInt(toEl.value)   || 1, 1), max);
 }
 
 // ─── RANGE STEP ───
 function step(id, delta) {
   const el = document.getElementById(id);
+  const max = BOOK_MAX[currentBook] || 9999;
   const val = parseInt(el.value) || 0;
-  el.value = Math.max(1, val + delta);
+  el.value = Math.min(max, Math.max(1, val + delta));
   saveSettings();
 }
 
@@ -1008,6 +1024,7 @@ function generateTable() {
 
   saveTable(displayWords);
   renderTable(displayWords);
+  closeSettings();
 }
 
 function renderTable(words) {
@@ -1190,30 +1207,12 @@ function swapColumns() {
   renderTable(currentWords);
 }
 
-// ─── COLLAPSE ───
-let formCollapsed = false;
-
-function toggleCollapse() {
-  formCollapsed = !formCollapsed;
-  applyCollapse();
-  localStorage.setItem(LS_COLLAPSED, formCollapsed ? '1' : '0');
+// ─── SETTINGS MODAL ───
+function openSettings() {
+  document.getElementById('settingsOverlay').classList.add('open');
 }
-
-function applyCollapse() {
-  const body = document.getElementById('collapsibleBody');
-  const btn  = document.getElementById('collapseBtn');
-  if (formCollapsed) {
-    body.classList.add('collapsed');
-    btn.textContent = '▼';
-  } else {
-    body.classList.remove('collapsed');
-    btn.textContent = '▲';
-  }
-}
-
-function loadCollapsed() {
-  formCollapsed = localStorage.getItem(LS_COLLAPSED) === '1';
-  applyCollapse();
+function closeSettings() {
+  document.getElementById('settingsOverlay').classList.remove('open');
 }
 
 // ─── RESET ───
@@ -1226,10 +1225,6 @@ function resetAll() {
   document.getElementById('maskMode').value = 'hide';
   saveSettings();
 
-  // フォームを展開
-  formCollapsed = false;
-  applyCollapse();
-  localStorage.removeItem(LS_COLLAPSED);
   // 表をクリア
   currentWords = [];
   tableSwapped = true;
@@ -1240,8 +1235,9 @@ function resetAll() {
   document.getElementById('tableArea').innerHTML = `
     <div class="empty-state">
       <div class="big">📖</div>
-      <p>上のフォームで範囲を設定して<br>「表を生成する」を押してください</p>
+      <p>右上の⚙アイコンから範囲を設定して<br>「生成」を押してください</p>
     </div>`;
+  closeSettings();
   showToast('リセットしました');
 }
 
