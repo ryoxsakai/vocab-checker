@@ -913,6 +913,22 @@
     border-radius: 50%;
     box-sizing: border-box;
   }
+  /* 「□C」「□U」（可算/不可算）のような合字を、例文レターと同じ意匠の小さなバッジにする */
+  .grammar-cu-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3em;
+    height: 1.3em;
+    border: 1.3px solid var(--accent2);
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: var(--accent2);
+    vertical-align: -0.15em;
+    line-height: 1;
+  }
 
   /* 文法モード：例文の日本語訳・暗記リストの「」部分をタップで隠す/表示する */
   .gmask {
@@ -1436,6 +1452,11 @@ function maskBracketed(escapedText) {
   return escapedText.replace(/「([^」]*)」/g, (m, inner) => `「<span class="gmask">${inner}</span>」`);
 }
 
+// 「□C」「□U」（可算/不可算）の合字を、例文レターと同じ意匠の小さなバッジにする
+function markCU(escapedText) {
+  return escapedText.replace(/□\s*([CU])/g, (m, letter) => `<span class="grammar-cu-badge">${letter}</span>`);
+}
+
 function renderGrammarMemo(memo) {
   // 覚えるべき語法グループは〈見出し〉をパステルカラーのバッジにする
   let h = '<div class="grammar-memo">';
@@ -1446,7 +1467,7 @@ function renderGrammarMemo(memo) {
     h += '</div>';
   }
   h += '<ul class="grammar-memo-list">';
-  memo.items.forEach(it => { h += `<li>${maskBracketed(escHtml(it))}</li>`; });
+  memo.items.forEach(it => { h += `<li>${maskBracketed(markCU(escHtml(it)))}</li>`; });
   h += '</ul>';
   (memo.notes || []).forEach(n => {
     h += `<div class="grammar-note"><span class="grammar-note-arrow">▶</span><span class="grammar-note-text">${maskBracketed(escHtml(n))}</span></div>`;

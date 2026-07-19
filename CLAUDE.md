@@ -225,6 +225,7 @@ DOMContentLoaded
 | `loadGrammarIfNeeded()` | `grammar.json` を初回のみキャッシュバスター付きで fetch（`grammarLoadPromise` で多重フェッチを防止）→ `renderGrammar()` |
 | `renderGrammar()` / `renderGrammarExample(ex)` / `renderGrammarMemo(memo)` | `grammarData` から文法モードの HTML を構築（□レター・〈タグ〉・▶注釈・パステルバッジ付き暗記リストを描画）。暗記リスト自身に付く▶注釈（`memo.notes`）も例文と同じ `.grammar-note` 見た目で描画する |
 | `maskBracketed(escapedText)` | 暗記リスト項目の `「...」` 部分だけを `.gmask` span で包む（複数箇所あればすべて個別にラップ）。`▶` 注釈にも適用する |
+| `markCU(escapedText)` | 暗記リスト項目内の `「□C」`「□U」`（可算/不可算）を `.grammar-cu-badge` span に変換する。`maskBracketed()` より先に適用し、バッジごと `.gmask` で包まれるようにする |
 | `toggleGrammarMask()` / `applyGrammarMask()` / `loadGrammarMask()` | 文法モードの訳・「」部分の表示/非表示切り替え・復元。`<html>` に `grammar-masked` クラスを付け外しし、モード変更時は個別展開状態をリセット |
 | `openToc()` / `closeToc()` / `populateToc()` | 目次モーダルの `.open` クラス付け外しと一覧生成（初回のみ） |
 | `scrollToLesson(n)` | 目次から該当講へ `scrollIntoView`、モーダルを閉じる |
@@ -333,6 +334,7 @@ DOMContentLoaded
 | `.grammar-memo` / `.grammar-memo-header` / `.memo-badge` / `.memo-header-suffix` | 暗記リストのカード。`.memo-badge` が〈見出し〉をパステルカラー（`--memo-bg`/`--memo-text`）のバッジにする |
 | `.grammar-memo-list` | ○項目の箇条書き。`::before` に `border-radius:50%` の空 `div` 相当（em単位）を描画し、文字サイズに追従する丸にする（`list-style:none`）。560px 以上で2カラム |
 | `.gmask` | 文法モードの訳・「」部分をタップで隠す/表示する要素。`grammar-masked` クラス下では `color:transparent; background:var(--red-dark)` で単語帳のマスクと同じ見た目にする。`.revealed` が付くと個別に表示される。`「」` 自体は隠さず、`maskBracketed()` が中身だけを `.gmask` で包む |
+| `.grammar-cu-badge` | 「□C」「□U」（可算/不可算）の合字を、例文レターと同じ意匠の小さなバッジにする。独自の `color` を持つため `.gmask` の `color:transparent` が上書きされず、マスク中も判別できる |
 | `.toc-list` / `.toc-item` / `.toc-num` | 目次モーダルの一覧・各講ボタン・講番号バッジ |
 
 ### モーダルパターン
