@@ -599,6 +599,26 @@
     transition: width 0.3s ease;
   }
 
+  /* ── ONBOARDING ── */
+  .onboarding-icon {
+    font-size: 44px;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+  .onboarding-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .onboarding-body {
+    font-size: 13.5px;
+    color: var(--text-sub);
+    line-height: 1.7;
+    margin-bottom: 24px;
+    min-height: 76px;
+  }
+
   .flash-no {
     font-size: 12px;
     color: var(--text-dim);
@@ -723,6 +743,7 @@
     cursor: pointer;
     transition: all 0.2s;
   }
+  .btn-prev:disabled { opacity: 0.35; cursor: default; }
 
   /* ── TOAST ── */
   .toast {
@@ -993,6 +1014,9 @@
   <div class="header-top">
     <div class="header-title">English Express</div>
     <div class="header-icons">
+      <button class="icon-btn" onclick="openOnboarding()" title="使い方">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+      </button>
       <button class="icon-btn" id="vocabSettingsBtn" onclick="openSettings()" title="単語範囲を設定">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
       </button>
@@ -1136,6 +1160,26 @@
     <button class="qr-close-btn" onclick="closeQR()">✕</button>
     <img src="qr.png" alt="QRコード">
     <span class="qr-label">カメラで読み取り→ホーム画面に追加</span>
+  </div>
+</div>
+
+<!-- ONBOARDING MODAL -->
+<div class="modal-overlay" id="onboardingOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeOnboarding()">✕</button>
+    <div class="modal-progress">
+      <span id="onboardingProgressText">1 / 4</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="onboardingProgressFill" style="width:25%"></div>
+      </div>
+    </div>
+    <div class="onboarding-icon" id="onboardingIcon">📖</div>
+    <div class="onboarding-title" id="onboardingTitle"></div>
+    <div class="onboarding-body" id="onboardingBody"></div>
+    <div class="modal-actions">
+      <button class="btn-prev" id="onboardingPrevBtn" onclick="onboardingPrev()">◀</button>
+      <button class="btn-next" id="onboardingNextBtn" onclick="onboardingNext()">次へ ▶</button>
+    </div>
   </div>
 </div>
 
@@ -1497,6 +1541,64 @@ function scrollToLesson(n) {
   closeToc();
   const el = document.getElementById('lesson-' + n);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── オンボーディング ───
+// 単語帳・文法モードのどちらからも呼べるよう、内容は appMode で出し分ける
+let onboardingStep = 0;
+const ONBOARDING_VOCAB = [
+  { icon: '📖', title: '単語帳へようこそ', body: 'Target 1400・1900・熟語1000の単語を、範囲を指定して学習できます。' },
+  { icon: '⚙️', title: '範囲を設定', body: '右上の設定アイコンから冊子と開始・終了番号を選び、「生成」を押すと単語表が作れます。' },
+  { icon: '👆', title: 'タップで隠す/表示', body: '意味をタップすると隠したり表示したりできます。⚡フラッシュチェックでカード形式の学習もできます。' },
+  { icon: '🎨', title: '見た目を変える', body: '設定モーダルのアイコンから、テーマ・文字サイズの変更やQRコードでの共有ができます。' },
+];
+const ONBOARDING_GRAMMAR = [
+  { icon: '📘', title: '文法解説へようこそ', body: '「超特急英文法 攻略ポイント集」全23講の例文・暗記リストを閲覧できます。' },
+  { icon: '📑', title: '目次から移動', body: '右上の目次アイコンから、学習したい講にすぐジャンプできます。' },
+  { icon: '🙈', title: '訳を隠して確認', body: '日本語訳や暗記リストの「」部分をタップすると隠したり表示したりできます。' },
+  { icon: '🎨', title: '見た目を変える', body: '目次モーダルのアイコンから、テーマ・文字サイズ・訳の表示切替ができます。' },
+];
+
+function onboardingSteps() {
+  return appMode === 'grammar' ? ONBOARDING_GRAMMAR : ONBOARDING_VOCAB;
+}
+
+function openOnboarding() {
+  onboardingStep = 0;
+  renderOnboardingStep();
+  document.getElementById('onboardingOverlay').classList.add('open');
+}
+function closeOnboarding() {
+  document.getElementById('onboardingOverlay').classList.remove('open');
+}
+
+function renderOnboardingStep() {
+  const steps = onboardingSteps();
+  const step = steps[onboardingStep];
+  document.getElementById('onboardingProgressText').textContent = `${onboardingStep + 1} / ${steps.length}`;
+  document.getElementById('onboardingProgressFill').style.width = `${((onboardingStep + 1) / steps.length) * 100}%`;
+  document.getElementById('onboardingIcon').textContent = step.icon;
+  document.getElementById('onboardingTitle').textContent = step.title;
+  document.getElementById('onboardingBody').textContent = step.body;
+  document.getElementById('onboardingPrevBtn').disabled = onboardingStep === 0;
+  document.getElementById('onboardingNextBtn').textContent = onboardingStep === steps.length - 1 ? '始める' : '次へ ▶';
+}
+
+function onboardingNext() {
+  const steps = onboardingSteps();
+  if (onboardingStep < steps.length - 1) {
+    onboardingStep++;
+    renderOnboardingStep();
+  } else {
+    closeOnboarding();
+  }
+}
+
+function onboardingPrev() {
+  if (onboardingStep > 0) {
+    onboardingStep--;
+    renderOnboardingStep();
+  }
 }
 
 // ─── TABLE SAVE/RESTORE ───
