@@ -224,7 +224,7 @@ DOMContentLoaded
 | `toggleAppMode()` / `applyAppMode()` / `loadAppMode()` | 単語⇔文法モードの切り替え・復元。`applyAppMode()` がビュー表示とヘッダーアイコンの出し分けを行う |
 | `loadGrammarIfNeeded()` | `grammar.json` を初回のみキャッシュバスター付きで fetch（`grammarLoadPromise` で多重フェッチを防止）→ `renderGrammar()` |
 | `renderGrammar()` / `renderGrammarExample(ex)` / `renderGrammarMemo(memo)` | `grammarData` から文法モードの HTML を構築（□レター・〈タグ〉・▶注釈・パステルバッジ付き暗記リストを描画） |
-| `maskBracketed(escapedText)` | 暗記リスト項目の `「...」` 部分だけを `.gmask` span で包む（複数箇所あればすべて個別にラップ） |
+| `maskBracketed(escapedText)` | 暗記リスト項目の `「...」` 部分だけを `.gmask` span で包む（複数箇所あればすべて個別にラップ）。`▶` 注釈にも適用する |
 | `toggleGrammarMask()` / `applyGrammarMask()` / `loadGrammarMask()` | 文法モードの訳・「」部分の表示/非表示切り替え・復元。`<html>` に `grammar-masked` クラスを付け外しし、モード変更時は個別展開状態をリセット |
 | `openToc()` / `closeToc()` / `populateToc()` | 目次モーダルの `.open` クラス付け外しと一覧生成（初回のみ） |
 | `scrollToLesson(n)` | 目次から該当講へ `scrollIntoView`、モーダルを閉じる |
@@ -332,7 +332,7 @@ DOMContentLoaded
 | `.grammar-note` / `.grammar-note-arrow` / `.grammar-note-text` | ▶ で始まる注釈。`display:flex` で矢印を固定幅の flex item にし、注釈テキストが折り返しても左端が揃う（ぶら下げインデント） |
 | `.grammar-memo` / `.grammar-memo-header` / `.memo-badge` / `.memo-header-suffix` | 暗記リストのカード。`.memo-badge` が〈見出し〉をパステルカラー（`--memo-bg`/`--memo-text`）のバッジにする |
 | `.grammar-memo-list` | ○項目の箇条書き。`::before` に `border-radius:50%` の空 `div` 相当（em単位）を描画し、文字サイズに追従する丸にする（`list-style:none`）。560px 以上で2カラム |
-| `.gmask` | 文法モードの訳・「」部分をタップで隠す/表示する要素。`grammar-masked` クラス下では `color:transparent; background:var(--red-dark)` で単語帳のマスクと同じ見た目にする。`.revealed` が付くと個別に表示される |
+| `.gmask` | 文法モードの訳・「」部分をタップで隠す/表示する要素。`grammar-masked` クラス下では `color:transparent; background:var(--red-dark)` で単語帳のマスクと同じ見た目にする。`.revealed` が付くと個別に表示される。`「」` 自体は隠さず、`maskBracketed()` が中身だけを `.gmask` で包む |
 | `.toc-list` / `.toc-item` / `.toc-num` | 目次モーダルの一覧・各講ボタン・講番号バッジ |
 
 ### モーダルパターン

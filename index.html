@@ -1425,15 +1425,15 @@ function renderGrammarExample(ex) {
     h += '</div>';
   }
   ex.notes.forEach(n => {
-    h += `<div class="grammar-note"><span class="grammar-note-arrow">▶</span><span class="grammar-note-text">${escHtml(n)}</span></div>`;
+    h += `<div class="grammar-note"><span class="grammar-note-arrow">▶</span><span class="grammar-note-text">${maskBracketed(escHtml(n))}</span></div>`;
   });
   h += '</div>';
   return h;
 }
 
-// 「...」で囲まれた意味部分だけをタップで隠す/表示できるようにする
+// 「...」の中身だけをタップで隠す/表示できるようにする（かぎ括弧自体は隠さない）
 function maskBracketed(escapedText) {
-  return escapedText.replace(/「[^」]*」/g, m => `<span class="gmask">${m}</span>`);
+  return escapedText.replace(/「([^」]*)」/g, (m, inner) => `「<span class="gmask">${inner}</span>」`);
 }
 
 function renderGrammarMemo(memo) {
