@@ -125,7 +125,7 @@ for raw in raw_lines:
         if m:
             flush_example(); flush_memo()
             ensure_section()
-            cur_memo = {'header': m.group(1), 'headerSuffix': m.group(2).strip(), 'items': []}
+            cur_memo = {'header': m.group(1), 'headerSuffix': m.group(2).strip(), 'items': [], 'notes': []}
             continue
 
     # ---- 現在の例文ブロックに属する行 ----
@@ -154,16 +154,25 @@ for raw in raw_lines:
 
     # ---- 現在の暗記ブロックに属する行 ----
     if cur_memo is not None:
+        if NOTE_MARK_RE.match(stripped):
+            # ○箇条書きのあとに続く▶注釈は暗記ブロック側の notes に入れる（項目末尾に混ぜない）
+            cur_memo['notes'].append(stripped[1:].strip())
+            continue
         idx = stripped.find('○')
         if idx == -1:
-            if cur_memo['items']:
+            if cur_memo['notes']:
+                cur_memo['notes'][-1] += ' ' + stripped
+            elif cur_memo['items']:
                 sep = '' if stripped.startswith('「') else ' '
                 cur_memo['items'][-1] += sep + stripped
         else:
             pre = stripped[:idx].strip()
-            if pre and cur_memo['items']:
-                sep = '' if pre.startswith('「') else ' '
-                cur_memo['items'][-1] += sep + pre
+            if pre:
+                if cur_memo['notes']:
+                    cur_memo['notes'][-1] += ' ' + pre
+                elif cur_memo['items']:
+                    sep = '' if pre.startswith('「') else ' '
+                    cur_memo['items'][-1] += sep + pre
             rest = stripped[idx:]
             parts = re.split(r'○\s*', rest)
             for p in parts:
@@ -176,7 +185,7 @@ for raw in raw_lines:
     if '○' in stripped:
         ensure_section()
         if cur_memo is None:
-            cur_memo = {'header': '', 'headerSuffix': '', 'items': []}
+            cur_memo = {'header': '', 'headerSuffix': '', 'items': [], 'notes': []}
         idx = stripped.find('○')
         pre = stripped[:idx].strip()
         if pre and cur_memo['items']:

@@ -127,7 +127,7 @@ Lesson[] = [{
         rewrites: [{ sentence: string, tag: string }],  // ＝/→ で始まる書き換え文
         translation: string[], gloss: string[], notes: string[] },
       // type: 'memo' — 〈見出し〉○項目 の暗記リスト
-      { type: 'memo', header: string, headerSuffix: string, items: string[] },
+      { type: 'memo', header: string, headerSuffix: string, items: string[], notes: string[] },
     ]
   }]
 }]
@@ -223,7 +223,7 @@ DOMContentLoaded
 | `showToast(msg)` | 2秒間トースト表示（タイマー重複防止あり） |
 | `toggleAppMode()` / `applyAppMode()` / `loadAppMode()` | 単語⇔文法モードの切り替え・復元。`applyAppMode()` がビュー表示とヘッダーアイコンの出し分けを行う |
 | `loadGrammarIfNeeded()` | `grammar.json` を初回のみキャッシュバスター付きで fetch（`grammarLoadPromise` で多重フェッチを防止）→ `renderGrammar()` |
-| `renderGrammar()` / `renderGrammarExample(ex)` / `renderGrammarMemo(memo)` | `grammarData` から文法モードの HTML を構築（□レター・〈タグ〉・▶注釈・パステルバッジ付き暗記リストを描画） |
+| `renderGrammar()` / `renderGrammarExample(ex)` / `renderGrammarMemo(memo)` | `grammarData` から文法モードの HTML を構築（□レター・〈タグ〉・▶注釈・パステルバッジ付き暗記リストを描画）。暗記リスト自身に付く▶注釈（`memo.notes`）も例文と同じ `.grammar-note` 見た目で描画する |
 | `maskBracketed(escapedText)` | 暗記リスト項目の `「...」` 部分だけを `.gmask` span で包む（複数箇所あればすべて個別にラップ）。`▶` 注釈にも適用する |
 | `toggleGrammarMask()` / `applyGrammarMask()` / `loadGrammarMask()` | 文法モードの訳・「」部分の表示/非表示切り替え・復元。`<html>` に `grammar-masked` クラスを付け外しし、モード変更時は個別展開状態をリセット |
 | `openToc()` / `closeToc()` / `populateToc()` | 目次モーダルの `.open` クラス付け外しと一覧生成（初回のみ） |
