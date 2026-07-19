@@ -189,6 +189,11 @@ DOMContentLoaded
 
 文法モードの訳・「」部分タップ
   → #grammarContent への1回限りのイベント委譲（DOMContentLoaded 時に登録）で .gmask 要素の revealed クラスを toggle
+
+？アイコンタップ（ヘッダー、単語帳・文法モード共通）
+  → openOnboarding()   onboardingStep をリセットして renderOnboardingStep() → モーダルを開く
+  → renderOnboardingStep()  appMode に応じて ONBOARDING_VOCAB / ONBOARDING_GRAMMAR から現在ステップの内容を描画
+  → onboardingNext() / onboardingPrev()  ステップを±1。最終ステップで「次へ」を押すと closeOnboarding()
 ```
 
 ### 主要関数一覧
@@ -229,6 +234,8 @@ DOMContentLoaded
 | `toggleGrammarMask()` / `applyGrammarMask()` / `loadGrammarMask()` | 文法モードの訳・「」部分の表示/非表示切り替え・復元。`<html>` に `grammar-masked` クラスを付け外しし、モード変更時は個別展開状態をリセット |
 | `openToc()` / `closeToc()` / `populateToc()` | 目次モーダルの `.open` クラス付け外しと一覧生成（初回のみ） |
 | `scrollToLesson(n)` | 目次から該当講へ `scrollIntoView`、モーダルを閉じる |
+| `openOnboarding()` / `closeOnboarding()` / `renderOnboardingStep()` | ？アイコンから開くオンボーディングモーダル。`appMode` に応じて `ONBOARDING_VOCAB`/`ONBOARDING_GRAMMAR` の内容を出し分ける |
+| `onboardingNext()` / `onboardingPrev()` | オンボーディングのステップを±1。最終ステップでは「次へ」ボタンが「始める」に変わり、押すと閉じる |
 
 ---
 
@@ -288,7 +295,8 @@ DOMContentLoaded
 | クラス | 説明 |
 |---|---|
 | `.header` | sticky ヘッダー。`linear-gradient(135deg, var(--header-grad-1), var(--header-grad-2))`、z-index:100。タイトルと設定アイコンのみのシンプルな1行構成（上下 padding 16px で対称） |
-| `.header-icons` | ヘッダー右端のアイコンボタン群（現在は設定アイコンのみ）をまとめる flex コンテナ |
+| `.header-icons` | ヘッダー右端のアイコンボタン群（？アイコン・設定/目次アイコン・モード切替アイコン）をまとめる flex コンテナ。？アイコンは単語帳・文法モード共通で常に表示 |
+| `.onboarding-icon` / `.onboarding-title` / `.onboarding-body` | オンボーディングモーダルの絵文字・見出し・本文（`ONBOARDING_VOCAB`/`ONBOARDING_GRAMMAR` の各ステップを描画） |
 | `.icon-btn` | ヘッダー／モーダル内のアイコンボタン共通スタイル（opacity:0.85、hover で 1、active でスケールダウン）。QRボタンも設定モーダル内でこのクラスを使う |
 | `.book-btn` / `.book-btn.active` | 冊子選択ボタン（単語1400・単語1900・熟語1000 の3つ）。`.active` で accent 背景 |
 | `.step-btn` | 数値入力の±ボタン |
