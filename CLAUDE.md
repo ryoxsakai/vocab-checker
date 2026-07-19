@@ -73,6 +73,7 @@ The CSV data files (`target1400.csv`, `target1900.csv`, `target1000.csv`) and `g
 | `maskStates` | `{ [key: string]: boolean }` | `${book}-${no}` → `true`=マスク中 |
 | `flashWords` | `WordObj[]` | フラッシュカード用コピー（`openFlash` 時に `currentWords` から複製） |
 | `flashIndex` | `number` | フラッシュカード現在位置（0-based） |
+| `flashResults` | `(boolean\|null)[]` | `flashWords` と対応する正解/不正解の記録。`null`=未回答、`openFlash` 時に全て `null` でリセット |
 | `tableSwapped` | `boolean` | `true`=左:単語・右:意味（デフォルト）、`false`=左:意味・右:単語 |
 | `theme` | `'dark' \| 'light'` | 現在のカラーテーマ。`document.documentElement`（`<html>`）の `data-theme` 属性として反映 |
 | `fontScale` | `1〜5` | 文字サイズ段階（3が標準）。`FONT_SCALE_MAP` で倍率に変換し `#tableArea` の `style.zoom` とフラッシュカードのフォントサイズに適用 |
@@ -169,9 +170,11 @@ DOMContentLoaded
   → tapMask(tdEl)      mask-el の display を toggle → saveMasks()
 
 フラッシュカード
-  → openFlash()        currentWords を flashWords にコピー
+  → openFlash()        currentWords を flashWords にコピー、flashResults を null で初期化
   → renderFlashCard()  flashIndex に対応するカードを描画
-  → flashNext() / flashPrev()  flashIndex を±1して renderFlashCard()
+  → flashAnswer(correct)  flashResults[flashIndex] を記録して次のカードへ。最後のカードなら showFlashResults()
+  → flashPrev()         flashIndex を-1して renderFlashCard()（前のカードの回答を上書きし直せる）
+  → showFlashResults()  #flashCardView を隠し #flashResultView に正解/不正解を色分けした一覧を描画
 
 モード切替アイコンタップ（ヘッダー）
   → toggleAppMode()    appMode を 'vocab'⇔'grammar' でトグル
@@ -206,8 +209,10 @@ DOMContentLoaded
 | `renderTable(words)` | テーブル HTML 文字列を構築して `tableArea.innerHTML` に設定 |
 | `tapMask(tdEl)` | `.mask-el` の `display` トグル → `maskStates` 更新・保存 |
 | `swapColumns()` | `tableSwapped` トグル → maskStates 再初期化 → renderTable |
-| `openFlash()` / `closeFlash()` | モーダルの `.open` クラス付け外し |
+| `openFlash()` / `closeFlash()` | モーダルの `.open` クラス付け外し。`openFlash()` は `flashResults` をリセットし `showFlashCardView()` を呼ぶ |
+| `showFlashCardView()` / `showFlashResults()` | `#flashCardView`/`#flashResultView` の表示切り替え。`showFlashResults()` は正解/不正解数の集計と一覧描画も行う |
 | `renderFlashCard()` | `flashWords[flashIndex]` を描画（フォント・サイズも動的切り替え） |
+| `flashAnswer(correct)` | 「正解」「不正解」ボタンのハンドラ。`flashResults[flashIndex]` に記録し、最後のカードなら `showFlashResults()` を呼ぶ |
 | `toggleFlashMask()` | フラッシュカードのカバー `.hidden` トグル |
 | `saveSettings()` / `loadSettings()` | LS_SETTINGS の読み書き |
 | `saveMasks()` / `loadMasks()` | LS_MASKS の読み書き |
@@ -272,6 +277,10 @@ DOMContentLoaded
   --header-grad-2: #131620; /* ヘッダーグラデーション終了色 */
   --memo-bg:   #3d3564;   /* 文法モード：暗記グループ見出しバッジの背景（パステル） */
   --memo-text: #c9baff;   /* 文法モード：暗記グループ見出しバッジの文字色 */
+  --correct-bg:   #244a3a; /* フラッシュチェック結果：正解行の背景（パステル） */
+  --correct-text: #97e8bd; /* フラッシュチェック結果：正解行の文字色 */
+  --incorrect-bg:   #4a2c2e; /* フラッシュチェック結果：不正解行の背景（パステル） */
+  --incorrect-text: #f2acac; /* フラッシュチェック結果：不正解行の文字色 */
   --radius:    12px;      /* 標準角丸 */
   --radius-sm:  8px;      /* 小さい角丸（行セル・小ボタン） */
 }
@@ -318,14 +327,18 @@ DOMContentLoaded
 | `.modal-title-row` | 設定モーダル見出しと `.modal-title-actions`（QR・テーマ・文字サイズアイコン）を横並びにする flex コンテナ |
 | `.modal-title` | 設定モーダルの見出しテキスト（15px, 700） |
 | `.modal-title-actions` | QR・テーマ・文字サイズの3アイコンをまとめる flex コンテナ。すべて `.icon-btn` を使い QRボタンと同じさりげない見た目に揃える |
-| `.modal-close` | モーダル閉じる×ボタン（26×26px 丸ボタン、hover で red 背景）。フラッシュカードモーダルのみで使用（設定モーダルは廃止） |
+| `.modal-close` | モーダル閉じる×ボタン（26×26px 丸ボタン、hover で red 背景）。フラッシュカード・オンボーディングモーダルで使用（設定モーダルは廃止） |
 | `.progress-bar` / `.progress-fill` | 進捗バー（accent→accent2 グラデーション） |
 | `.flash-word` | フラッシュカードのメイン単語（最大 64px、JS でサイズ動的変更） |
 | `.flash-meaning-wrap` | 答えのカバー付きコンテナ（タップでトグル） |
 | `.flash-meaning-cover` / `.hidden` | 「タップして表示」カバー。`.hidden` で `display:none` |
 | `.flash-speak-btn` | フラッシュカード内音声ボタン（48×48px、surface2 背景、flex 配置） |
-| `.btn-next` | 「次へ」ボタン（flex:1、accent グラデーション） |
-| `.btn-prev` | 「◀戻る」ボタン（48px 固定、surface2 背景） |
+| `.btn-next` | 「次へ」ボタン（flex:1、accent グラデーション）。オンボーディングの「次へ/始める」、フラッシュチェック結果画面の「閉じる」でも使用 |
+| `.btn-prev` | 「◀戻る」ボタン（48px 固定、surface2 背景）。`disabled` 時は `opacity:0.35` |
+| `.flash-answer-actions` / `.btn-incorrect` / `.btn-correct` | フラッシュカードの「✕ 不正解」「◯ 正解」ボタン行（`.btn-prev`/`.flash-speak-btn` の行の下）。押すと `flashResults` に記録して次のカードへ進む |
+| `.flash-result-title` / `.flash-result-summary` | フラッシュチェック終了後の結果画面の見出しと正解/不正解数 |
+| `.flash-result-list` / `.flash-result-item` | 結果一覧（`overflow-y:auto` でスクロール）。`.correct`/`.incorrect` 修飾クラスで `--correct-bg`/`--incorrect-bg` のパステル背景に分ける |
+| `.flash-result-word` / `.flash-result-meaning` | 結果一覧の各行内の単語（Outfit）と意味（Noto Sans JP）表示 |
 | `.qr-overlay` / `.qr-overlay.open` | QR モーダル背景（z-index:500、opacity トランジション） |
 | `.qr-card` | QR モーダル本体（surface 背景、flex 縦並び） |
 | `.toast` / `.toast.show` | トースト通知（fixed、bottom:24px、`translateY(80px→0)` アニメーション、z-index:2000） |
