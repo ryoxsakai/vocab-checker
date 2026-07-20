@@ -31,10 +31,6 @@
     --header-grad-2: #131620;
     --memo-bg: #3d3564;
     --memo-text: #c9baff;
-    --correct-bg: #244a3a;
-    --correct-text: #97e8bd;
-    --incorrect-bg: #4a2c2e;
-    --incorrect-text: #f2acac;
     --radius: 12px;
     --radius-sm: 8px;
   }
@@ -57,10 +53,6 @@
     --header-grad-2: #eceef6;
     --memo-bg: #ece4ff;
     --memo-text: #6a4fc4;
-    --correct-bg: #d9f5e3;
-    --correct-text: #1f8a53;
-    --incorrect-bg: #ffe1e1;
-    --incorrect-text: #c23636;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -753,71 +745,6 @@
   }
   .btn-prev:disabled { opacity: 0.35; cursor: default; }
 
-  /* ── フラッシュチェック：正解/不正解ボタンと結果一覧 ── */
-  .flash-answer-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  .btn-incorrect, .btn-correct {
-    flex: 1;
-    padding: 13px;
-    border-radius: var(--radius);
-    border: none;
-    color: #fff;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-incorrect { background: var(--red); }
-  .btn-correct { background: var(--green); }
-  .btn-incorrect:active, .btn-correct:active { transform: scale(0.97); }
-
-  .flash-result-title {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-  .flash-result-summary {
-    font-size: 13px;
-    color: var(--text-sub);
-    margin-bottom: 16px;
-  }
-  .flash-result-list {
-    max-height: 45vh;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 18px;
-  }
-  .flash-result-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-  }
-  .flash-result-item.correct { background: var(--correct-bg); color: var(--correct-text); }
-  .flash-result-item.incorrect { background: var(--incorrect-bg); color: var(--incorrect-text); }
-  .flash-result-word {
-    font-family: 'Outfit', monospace;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-  .flash-result-meaning {
-    font-family: 'Noto Sans JP', sans-serif;
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   /* ── TOAST ── */
   .toast {
     position: fixed;
@@ -1207,33 +1134,22 @@
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <button class="modal-close" onclick="closeFlash()">✕</button>
-    <div id="flashCardView">
-      <div class="modal-progress">
-        <span id="flashProgressText">1 / 50</span>
-        <div class="progress-bar">
-          <div class="progress-fill" id="progressFill" style="width:2%"></div>
-        </div>
-      </div>
-      <div class="flash-no" id="flashNo">#1</div>
-      <div class="flash-word" id="flashWord">word</div>
-      <div class="flash-meaning-wrap" onclick="toggleFlashMask()">
-        <div class="flash-meaning-text" id="flashMeaning">意味</div>
-        <div class="flash-meaning-cover" id="flashCover">タップして表示</div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-prev" onclick="flashPrev()">◀</button>
-        <button class="flash-speak-btn" onclick="speakCurrentFlash()" title="発音を聞く"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
-      </div>
-      <div class="flash-answer-actions">
-        <button class="btn-incorrect" onclick="flashAnswer(false)">✕ 不正解</button>
-        <button class="btn-correct" onclick="flashAnswer(true)">◯ 正解</button>
+    <div class="modal-progress">
+      <span id="flashProgressText">1 / 50</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:2%"></div>
       </div>
     </div>
-    <div id="flashResultView" style="display:none">
-      <div class="flash-result-title">結果</div>
-      <div class="flash-result-summary" id="flashResultSummary"></div>
-      <div class="flash-result-list" id="flashResultList"></div>
-      <button class="btn-next" onclick="closeFlash()">閉じる</button>
+    <div class="flash-no" id="flashNo">#1</div>
+    <div class="flash-word" id="flashWord">word</div>
+    <div class="flash-meaning-wrap" onclick="toggleFlashMask()">
+      <div class="flash-meaning-text" id="flashMeaning">意味</div>
+      <div class="flash-meaning-cover" id="flashCover">タップして表示</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-prev" onclick="flashPrev()">◀</button>
+      <button class="btn-next" onclick="flashNext()">次へ ▶</button>
+      <button class="flash-speak-btn" onclick="speakCurrentFlash()" title="発音を聞く"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
     </div>
   </div>
 </div>
@@ -1277,7 +1193,6 @@ let currentBook = '1900';
 let currentWords = []; // words currently shown in table
 let flashIndex = 0;
 let flashWords = [];
-let flashResults = []; // flashWords と対応。null=未回答、true=正解、false=不正解
 let maskStates = {};   // key: `${book}-${no}` → true=masked
 let tableSwapped = true; // false=左意味・右スペル、true=左スペル・右意味（デフォルト）
 let theme = 'dark';     // 'dark' | 'light'
@@ -1868,9 +1783,7 @@ function toggleMask(key, textEl) {
 function openFlash() {
   if (!currentWords || currentWords.length === 0) return;
   flashWords = [...currentWords];
-  flashResults = new Array(flashWords.length).fill(null);
   flashIndex = 0;
-  showFlashCardView();
   renderFlashCard();
   document.getElementById('modalOverlay').classList.add('open');
   // always start with cover on
@@ -1879,11 +1792,6 @@ function openFlash() {
 
 function closeFlash() {
   document.getElementById('modalOverlay').classList.remove('open');
-}
-
-function showFlashCardView() {
-  document.getElementById('flashCardView').style.display = '';
-  document.getElementById('flashResultView').style.display = 'none';
 }
 
 function renderFlashCard() {
@@ -1928,13 +1836,12 @@ function toggleFlashMask() {
   cover.classList.toggle('hidden');
 }
 
-function flashAnswer(correct) {
-  flashResults[flashIndex] = correct;
+function flashNext() {
   if (flashIndex < flashWords.length - 1) {
     flashIndex++;
     renderFlashCard();
   } else {
-    showFlashResults();
+    showToast('🎉 最後の単語です！');
   }
 }
 
@@ -1943,24 +1850,6 @@ function flashPrev() {
     flashIndex--;
     renderFlashCard();
   }
-}
-
-function showFlashResults() {
-  document.getElementById('flashCardView').style.display = 'none';
-  document.getElementById('flashResultView').style.display = '';
-
-  const correctCount = flashResults.filter(r => r === true).length;
-  const incorrectCount = flashResults.filter(r => r === false).length;
-  document.getElementById('flashResultSummary').textContent = `正解 ${correctCount} / 不正解 ${incorrectCount}`;
-
-  const html = flashWords.map((w, i) => {
-    const cls = flashResults[i] === true ? 'correct' : 'incorrect';
-    return `<div class="flash-result-item ${cls}">`
-      + `<span class="flash-result-word">${escHtml(w.word)}</span>`
-      + `<span class="flash-result-meaning">${escHtml(w.meaning)}</span>`
-      + '</div>';
-  }).join('');
-  document.getElementById('flashResultList').innerHTML = html;
 }
 
 // ─── SWAP COLUMNS ───
