@@ -1195,7 +1195,7 @@ let flashIndex = 0;
 let flashWords = [];
 let maskStates = {};   // key: `${book}-${no}` → true=masked
 let tableSwapped = true; // false=左意味・右スペル、true=左スペル・右意味（デフォルト）
-let theme = 'dark';     // 'dark' | 'light'
+let theme = 'light';    // 'dark' | 'light'
 let fontScale = 3;      // 1〜5の5段階（3が標準サイズ）
 let appMode = 'vocab';  // 'vocab' | 'grammar'
 let grammarData = null; // grammar.json 読み込み後にセット
@@ -1336,8 +1336,8 @@ function applyTheme() {
 
 function loadTheme() {
   try {
-    theme = localStorage.getItem(LS_THEME) === 'light' ? 'light' : 'dark';
-  } catch(e) { theme = 'dark'; }
+    theme = localStorage.getItem(LS_THEME) === 'dark' ? 'dark' : 'light';
+  } catch(e) { theme = 'light'; }
   applyTheme();
 }
 
