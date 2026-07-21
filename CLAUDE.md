@@ -287,7 +287,7 @@ DOMContentLoaded
 
 - `* { box-sizing: border-box; margin: 0; padding: 0; }`
 - `body`: `font-family: 'Outfit', 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 60px;`
-- ダーク/ライトの2テーマ（デフォルトはダーク）。`.header` の背景グラデーションも `--header-grad-1`/`-2` 経由でテーマに追従
+- ダーク/ライトの2テーマ（デフォルトはライト）。`.header` の背景グラデーションも `--header-grad-1`/`-2` 経由でテーマに追従
 - スクロールバー: width 4px、border-radius 2px（webkit のみ対応）
 
 ### 主要コンポーネントクラス
@@ -400,7 +400,7 @@ element.classList.remove('open');
 - `selectBook(book, silent=false)`: currentBook 更新後に必ず `clampRangeInputs()` を呼ぶ。`silent=true` のときは `saveSettings()` を呼ばない（`loadSettings()` からの呼び出し時に使用）。
 - 冊子ごとの範囲上限は `BOOK_MAX` で一元管理。新しい冊子を追加するときはこのオブジェクトにエントリを追加するだけでよい。
 - `generateTable()` は成功時のみ `closeSettings()` を呼ぶ（該当語がない場合はトーストを出してモーダルを開いたままにし、その場で範囲を直せるようにする）。
-- `theme` のデフォルトは `'dark'`、`fontScale` のデフォルトは `3`、`grammarMaskMode` のデフォルトは `'show'`。すべて localStorage 未設定時のフォールバック値。
+- `theme` のデフォルトは `'light'`、`fontScale` のデフォルトは `3`、`grammarMaskMode` のデフォルトは `'show'`。すべて localStorage 未設定時のフォールバック値。
 - テーマ切替ボタンは設定モーダルと目次モーダルの2箇所にあるため、`js-theme-btn` クラスで両方まとめて更新する（`id` は使わない）。新しくテーマボタンを追加する場合もこのクラスを付ける。
 - QR・テーマ・文字サイズのアイコンは設定モーダルの見出し行にあるため、`openQR()` は必ず `closeSettings()` を先に呼ぶ（`.modal-overlay` の z-index は共通の1000なので、閉じないと設定モーダルの背景が QR モーダルの上に重なり閉じるボタンが押せなくなる）。
 - 設定モーダルに閉じるボタン（×）は置かない。`#settingsOverlay` に `onclick="closeSettings()"`、モーダル本体（`.settings-modal`）に `onclick="event.stopPropagation()"` を付け、オーバーレイ部分をタップしたときだけ閉じるようにする（QRオーバーレイと同じパターン）。
